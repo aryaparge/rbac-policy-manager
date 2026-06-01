@@ -10,8 +10,11 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "principals") //PRINCIPAL can be a keyword in some databases and security frameworks.
+@Table(name = "principals") // PRINCIPAL can be a keyword in some databases and security frameworks.
 public class Principal extends BaseEntity {
+
+    @Column(unique = true, nullable = false, updatable = false)
+    private String principalID;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
