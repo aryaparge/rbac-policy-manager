@@ -9,7 +9,7 @@ import lombok.Setter;
 @Entity
 @Getter
 @Setter
-@Table(name = "actions")
+@Table(name = "action")
 public class Action extends BaseEntity {
 
     @Column(unique = true, nullable = false)

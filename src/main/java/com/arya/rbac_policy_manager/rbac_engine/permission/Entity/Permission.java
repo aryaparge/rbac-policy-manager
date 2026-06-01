@@ -7,7 +7,7 @@ import com.arya.rbac_policy_manager.rbac_engine.resource.Entity.Resource;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "permissions", uniqueConstraints = { @UniqueConstraint(columnNames = { "resource_id", "action_id" }) })
+@Table(name = "permission", uniqueConstraints = { @UniqueConstraint(columnNames = { "resource_id", "action_id" }) })
 public class Permission extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false) //lazy to avoid overfetching, still not convinced that eager isnt needed here.
