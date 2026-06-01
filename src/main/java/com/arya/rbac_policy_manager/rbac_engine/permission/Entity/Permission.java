@@ -1,8 +1,8 @@
-package com.arya.rbac_policy_manager.rbac_engine.permission.Entity;
+package com.arya.rbac_policy_manager.rbac_engine.permission.entity;
 
-import com.arya.rbac_policy_manager.rbac_engine.action.Entity.Action;
-import com.arya.rbac_policy_manager.rbac_engine.common.Entity.BaseEntity;
-import com.arya.rbac_policy_manager.rbac_engine.resource.Entity.Resource;
+import com.arya.rbac_policy_manager.rbac_engine.action.entity.Action;
+import com.arya.rbac_policy_manager.rbac_engine.common.entity.BaseEntity;
+import com.arya.rbac_policy_manager.rbac_engine.resource.entity.Resource;
 
 import jakarta.persistence.*;
 

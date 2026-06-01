@@ -1,6 +1,6 @@
-package com.arya.rbac_policy_manager.rbac_engine.role.Entity;
+package com.arya.rbac_policy_manager.rbac_engine.role.entity;
 
-import com.arya.rbac_policy_manager.rbac_engine.common.Entity.BaseEntity;
+import com.arya.rbac_policy_manager.rbac_engine.common.entity.BaseEntity;
 
 import jakarta.persistence.*;
 import lombok.Getter;

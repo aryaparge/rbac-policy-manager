@@ -1,4 +1,4 @@
-package com.arya.rbac_policy_manager.rbac_engine.common.Entity;
+package com.arya.rbac_policy_manager.rbac_engine.common.entity;
 
 import jakarta.persistence.*;
 import lombok.Getter;
