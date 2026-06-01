@@ -8,6 +8,7 @@ public class RbacPolicyManagerApplication {
 
 	public static void main(String[] args) {
 		SpringApplication.run(RbacPolicyManagerApplication.class, args);
+		System.out.println("Working fine");
 	}
 
 }
