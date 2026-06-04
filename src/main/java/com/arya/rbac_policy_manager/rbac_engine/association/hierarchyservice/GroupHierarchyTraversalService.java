@@ -1,4 +1,4 @@
-package com.arya.rbac_policy_manager.rbac_engine.association.service;
+package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupHierarchyRepository;
@@ -13,7 +13,7 @@ import java.util.*;
 @Service
 @RequiredArgsConstructor
 public class GroupHierarchyTraversalService {
-    private final GroupHierarchyRepository GroupHierarchyRepository;
+    private final GroupHierarchyRepository groupHierarchyRepository;
 
     public boolean isReachable(Group source, Group target) {
         Set<UUID> visited = new HashSet<>();
@@ -31,7 +31,7 @@ public class GroupHierarchyTraversalService {
                 return true;
             }
 
-            List<GroupHierarchy> children = GroupHierarchyRepository.findByParentGroupAndStatus(current, Status.ACTIVE);
+            List<GroupHierarchy> children = groupHierarchyRepository.findByParentGroupAndStatus(current, Status.ACTIVE);
             for (GroupHierarchy edge : children) {
                 stack.push(edge.getChildGroup());
             }
@@ -48,7 +48,7 @@ public class GroupHierarchyTraversalService {
         while (!stack.isEmpty()) {
             Group current = stack.pop();
 
-            List<GroupHierarchy> children = GroupHierarchyRepository.findByParentGroupAndStatus(current, Status.ACTIVE);
+            List<GroupHierarchy> children = groupHierarchyRepository.findByParentGroupAndStatus(current, Status.ACTIVE);
             for (GroupHierarchy edge : children) {
                 Group child = edge.getChildGroup();
                 if (descendants.add(child)) {
@@ -68,7 +68,7 @@ public class GroupHierarchyTraversalService {
         while (!stack.isEmpty()) {
             Group current = stack.pop();
 
-            List<GroupHierarchy> children = GroupHierarchyRepository.findByParentGroupAndStatus(current, Status.ACTIVE);
+            List<GroupHierarchy> children = groupHierarchyRepository.findByParentGroupAndStatus(current, Status.ACTIVE);
             for (GroupHierarchy edge : children) {
                 Group child = edge.getChildGroup();
                 if (descendants.add(child)) {
@@ -88,7 +88,7 @@ public class GroupHierarchyTraversalService {
         while (!stack.isEmpty()) {
             Group current = stack.pop();
 
-            List<GroupHierarchy> parents = GroupHierarchyRepository.findByChildGroupAndStatus(current, Status.ACTIVE);
+            List<GroupHierarchy> parents = groupHierarchyRepository.findByChildGroupAndStatus(current, Status.ACTIVE);
             for (GroupHierarchy edge : parents) {
                 Group parent = edge.getParentGroup();
                 if (ancestors.add(parent)) {
@@ -108,7 +108,7 @@ public class GroupHierarchyTraversalService {
             return memo.get(group.getId());
         }
 
-        List<GroupHierarchy> children = GroupHierarchyRepository.findByParentGroupAndStatus(group, Status.ACTIVE);
+        List<GroupHierarchy> children = groupHierarchyRepository.findByParentGroupAndStatus(group, Status.ACTIVE);
         if (children.isEmpty()) {
             memo.put(group.getId(), 0);
             return 0;
@@ -132,7 +132,7 @@ public class GroupHierarchyTraversalService {
             return memo.get(group.getId());
         }
 
-        List<GroupHierarchy> parents = GroupHierarchyRepository.findByChildGroupAndStatus(group, Status.ACTIVE);
+        List<GroupHierarchy> parents = groupHierarchyRepository.findByChildGroupAndStatus(group, Status.ACTIVE);
 
         if (parents.isEmpty()) {
             memo.put(group.getId(), 0);

@@ -14,7 +14,7 @@ import lombok.Setter;
 public class Subject extends BaseEntity {
 
     @Column(unique = true, nullable = false, updatable = false)
-    private String subjectID;
+    private String subjectId;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
@@ -22,4 +22,6 @@ public class Subject extends BaseEntity {
 
     @Column(nullable = false)
     private String displayName;
+
+    private String description;
 }

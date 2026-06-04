@@ -1,4 +1,4 @@
-package com.arya.rbac_policy_manager.rbac_engine.association.service;
+package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleHierarchyRepository;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
