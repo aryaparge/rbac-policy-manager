@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.repo;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupPermission;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 
@@ -15,9 +16,9 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
 
     List<GroupPermission> findByGroup(Group group);
 
+    List<GroupPermission> findByGroupAndStatus(Group group, Status status);
+
     List<GroupPermission> findByPermission(Permission permission);
 
-    boolean existsByGroupAndPermission(
-            Group group,
-            Permission permission);
+    boolean existsByGroupAndPermission(Group group, Permission permission);
 }

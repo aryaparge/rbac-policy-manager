@@ -60,9 +60,13 @@ public class RoleHierarchyTraversalService {
     }
 
     public Set<Role> getRoleClosure(Role role) {
-        Set<Role> descendants = new HashSet<>();
+        if(role.getStatus() != Status.ACTIVE)
+        {
+            throw new IllegalArgumentException("Cannot get closure for disabled/deleted role");
+        }
+        Set<Role> closure = new HashSet<>();
         Deque<Role> stack = new ArrayDeque<>();
-        descendants.add(role);
+        closure.add(role);
         stack.push(role);
 
         while (!stack.isEmpty()) {
@@ -71,12 +75,12 @@ public class RoleHierarchyTraversalService {
             List<RoleHierarchy> children = roleHierarchyRepository.findByParentRoleAndStatus(current, Status.ACTIVE);
             for (RoleHierarchy edge : children) {
                 Role child = edge.getChildRole();
-                if (descendants.add(child)) {
+                if (child.getStatus() == Status.ACTIVE && closure.add(child)) {
                     stack.push(child);
                 }
             }
         }
-        return descendants;
+        return closure;
     }
 
     private Set<Role> getAncestors(Role role) {

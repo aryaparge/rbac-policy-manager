@@ -1,5 +1,6 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.repo;
 
+import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.SubjectRole;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 import com.arya.rbac_policy_manager.rbac_engine.subject.entity.Subject;
@@ -15,10 +16,9 @@ public interface SubjectRoleRepository extends JpaRepository<SubjectRole, UUID> 
 
     List<SubjectRole> findBySubject(Subject subject);
 
+    List<SubjectRole> findBySubjectAndStatus(Subject subject, Status status);
+
     List<SubjectRole> findByRole(Role role);
 
-    boolean existsBySubjectAndRole(
-            Subject subject,
-            Role role
-    );
+    boolean existsBySubjectAndRole(Subject subject, Role role);
 }

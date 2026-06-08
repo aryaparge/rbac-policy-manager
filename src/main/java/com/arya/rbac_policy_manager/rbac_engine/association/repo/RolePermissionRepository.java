@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.repo;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.RolePermission;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 
@@ -8,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Repository
@@ -15,9 +17,9 @@ public interface RolePermissionRepository extends JpaRepository<RolePermission, 
 
     List<RolePermission> findByRole(Role role);
 
+    Set<RolePermission> findByRoleAndStatus(Role role, Status status);
+
     List<RolePermission> findByPermission(Permission permission);
 
-    boolean existsByRoleAndPermission(
-            Role role,
-            Permission permission);
+    boolean existsByRoleAndPermission( Role role, Permission permission);
 }

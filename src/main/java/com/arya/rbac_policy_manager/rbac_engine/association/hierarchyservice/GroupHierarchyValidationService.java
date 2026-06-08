@@ -21,7 +21,6 @@ public class GroupHierarchyValidationService {
                 }
         }
 
-
         public void validateNoCycle(Group parent, Group child) {
                 if (traversalService.isReachable(child, parent)) {
                         throw new IllegalArgumentException(

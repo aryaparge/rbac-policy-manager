@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.repo;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.RoleGroup;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 
@@ -15,9 +16,9 @@ public interface RoleGroupRepository extends JpaRepository<RoleGroup, UUID> {
 
     List<RoleGroup> findByRole(Role role);
 
+    List<RoleGroup> findByRoleAndStatus(Role role, Status status);
+
     List<RoleGroup> findByGroup(Group group);
 
-    boolean existsByRoleAndGroup(
-            Role role,
-            Group group);
+    boolean existsByRoleAndGroup( Role role, Group group);
 }

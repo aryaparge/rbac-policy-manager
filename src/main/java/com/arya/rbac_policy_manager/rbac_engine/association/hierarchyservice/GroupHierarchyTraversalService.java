@@ -60,9 +60,13 @@ public class GroupHierarchyTraversalService {
     }
 
     public Set<Group> getGroupClosure(Group group) {
-        Set<Group> descendants = new HashSet<>();
+        if(group.getStatus() != Status.ACTIVE)
+        {
+            throw new IllegalArgumentException("Cannot find closure for disabled/deleted group.");
+        }
+        Set<Group> closure = new HashSet<>();
         Deque<Group> stack = new ArrayDeque<>();
-        descendants.add(group);
+        closure.add(group);
         stack.push(group);
 
         while (!stack.isEmpty()) {
@@ -71,12 +75,12 @@ public class GroupHierarchyTraversalService {
             List<GroupHierarchy> children = groupHierarchyRepository.findByParentGroupAndStatus(current, Status.ACTIVE);
             for (GroupHierarchy edge : children) {
                 Group child = edge.getChildGroup();
-                if (descendants.add(child)) {
+                if (closure.add(child) && child.getStatus() == Status.ACTIVE) {
                     stack.push(child);
                 }
             }
         }
-        return descendants;
+        return closure;
     }
 
     private Set<Group> getAncestors(Group group) {
