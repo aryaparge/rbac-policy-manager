@@ -1,12 +1,19 @@
 package com.arya.rbac_policy_manager.rbac_engine.group.service;
 
 import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.group.repo.GroupRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -18,16 +25,16 @@ public class GroupService {
     private Group getActiveGroup(UUID groupId) {
         return groupRepository.findByIdAndStatus(
                 groupId,
-                Status.ACTIVE).orElseThrow(() -> new RuntimeException("Group not found"));
+                Status.ACTIVE).orElseThrow(() -> new ActiveEntityNotFoundException("Group", groupId));
     }
 
     public Group createGroup(
             String name,
             String description) {
-        if (groupRepository.existsByName(name)) {
-            throw new RuntimeException("Group already exists");
+        Optional<Group> existing = groupRepository.findByName(name);
+        if (existing.isPresent()) {
+            throw new DuplicateEntityException("Group", name, existing.get().getStatus());
         }
-
         Group group = new Group();
 
         group.setName(name);
@@ -56,21 +63,32 @@ public class GroupService {
 
     @Transactional(readOnly = true)
     public List<Group> getAllGroups() {
-        return groupRepository.findByStatus( Status.ACTIVE);
+        return groupRepository.findByStatus(Status.ACTIVE);
     }
 
     public void disableGroup(UUID groupId) {
         Group group = getActiveGroup(groupId);
 
         group.setStatus(Status.DISABLED);
+        group.setDisabledAt(Instant.now());
 
         groupRepository.save(group);
     }
 
     public void deleteGroup(UUID groupId) {
-        Group group = getActiveGroup(groupId);
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new EntityNotFoundException("Group not found"));
+
+        if (group.getStatus() == Status.ACTIVE) {
+            throw new InvalidEntityStateException("Active group cannot be deleted. Consider disabling instead");
+        }
+
+        else if (group.getStatus() == Status.DELETED) {
+            throw new InvalidEntityStateException("Group already deleted.");
+        }
 
         group.setStatus(Status.DELETED);
+        group.setDeletedAt(Instant.now());
 
         groupRepository.save(group);
     }

@@ -1,5 +1,6 @@
 package com.arya.rbac_policy_manager.rbac_engine.permission.service;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,6 +10,10 @@ import org.springframework.transaction.annotation.Transactional;
 import com.arya.rbac_policy_manager.rbac_engine.action.entity.Action;
 import com.arya.rbac_policy_manager.rbac_engine.action.repo.ActionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 import com.arya.rbac_policy_manager.rbac_engine.permission.repo.PermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.resource.entity.Resource;
@@ -28,54 +33,26 @@ public class PermissionService {
     private Permission getActivePermission(
             UUID permissionId
     ) {
-        Permission permission = permissionRepository
-                .findById(permissionId)
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Permission not found"
-                        ));
-
-        if (permission.getStatus() != Status.ACTIVE) {
-            throw new RuntimeException(
-                    "Permission not found"
-            );
-        }
+        Permission permission = permissionRepository.findByIdAndStatus(permissionId, Status.ACTIVE)
+                                .orElseThrow(() -> new ActiveEntityNotFoundException("Permission", permissionId));
 
         return permission;
     }
 
     public Permission createPermission(
-            String resourceName,
-            String actionName,
+            UUID actionId,
+            UUID resourceId,
             String description
     ) {
         Resource resource = resourceRepository
-                .findByNameAndStatus(
-                        resourceName,
-                        Status.ACTIVE
-                )
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Resource not found"
-                        ));
+                .findByIdAndStatus( resourceId, Status.ACTIVE )
+                .orElseThrow(() -> new ActiveEntityNotFoundException("Resource", resourceId));
 
-        Action action = actionRepository
-                .findByNameAndStatus(
-                        actionName,
-                        Status.ACTIVE
-                )
-                .orElseThrow(() ->
-                        new RuntimeException(
-                                "Action not found"
-                        ));
+        Action action = actionRepository.findByIdAndStatus( actionId, Status.ACTIVE )
+                .orElseThrow(() -> new ActiveEntityNotFoundException("Action", actionId));
 
-        if (permissionRepository.existsByResourceAndAction(
-                resource,
-                action
-        )) {
-            throw new RuntimeException(
-                    "Permission already exists"
-            );
+        if (permissionRepository.existsByResourceAndAction( resource, action )) {
+            throw new DuplicateEntityException("Permission", action.getName()+"_"+resource.getName() , Status.ACTIVE);
         }
 
         Permission permission = new Permission();
@@ -89,35 +66,34 @@ public class PermissionService {
     }
 
     @Transactional(readOnly = true)
-    public Permission getPermission(
-            UUID permissionId
-    ) {
+    public Permission getPermission( UUID permissionId ) {
         return getActivePermission(permissionId);
     }
 
     @Transactional(readOnly = true)
     public List<Permission> getAllPermissions() {
-        return permissionRepository.findByStatus(
-                Status.ACTIVE
-        );
+        return permissionRepository.findByStatus( Status.ACTIVE );
     }
 
-    public void disablePermission(
-            UUID permissionId
-    ) {
-        Permission permission =
-                getActivePermission(permissionId);
+    public void disablePermission( UUID permissionId ) {
+        Permission permission = getActivePermission(permissionId);
 
         permission.setStatus(Status.DISABLED);
+        permission.setDisabledAt(Instant.now());
 
         permissionRepository.save(permission);
     }
 
-    public void deletePermission(
-            UUID permissionId
-    ) {
-        Permission permission =
-                getActivePermission(permissionId);
+    public void deletePermission( UUID permissionId ) {
+         Permission permission = permissionRepository.findById(permissionId).orElseThrow(() -> new EntityNotFoundException("Permission not found"));
+
+        if(permission.getStatus() == Status.ACTIVE) {
+            throw new InvalidEntityStateException("Active permission cannot be deleted. Consider disabling instead");
+        }
+
+        else if(permission.getStatus() == Status.DELETED) {
+            throw new InvalidEntityStateException("Permission already deleted.");
+        }
 
         permission.setStatus(Status.DELETED);
 

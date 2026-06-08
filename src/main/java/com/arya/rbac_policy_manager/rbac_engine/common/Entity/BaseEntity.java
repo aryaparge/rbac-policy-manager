@@ -37,5 +37,7 @@ public class BaseEntity {
     private Instant updatedAt;
     private String updatedBy;
 
-    //add disabledAt and deletedAt fields for lifecycle cleanup.
+    private Instant disabledAt;
+
+    private Instant deletedAt;
 }

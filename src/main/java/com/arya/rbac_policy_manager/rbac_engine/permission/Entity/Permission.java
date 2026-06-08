@@ -23,5 +23,8 @@ public class Permission extends BaseEntity {
     @JoinColumn(name = "action_id", nullable = false)
     private Action action;
 
+    @Column(nullable = false)
+    private String name = action.getName() + "_" + resource.getName();
+
     private String description;
 }

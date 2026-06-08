@@ -18,5 +18,7 @@ public interface PermissionRepository extends JpaRepository<Permission, UUID> {
 
         Optional<Permission> findByResourceAndActionAndStatus( Resource resource, Action action, Status status );
 
+        Optional<Permission> findByIdAndStatus(UUID id, Status status);
+
         List<Permission> findByStatus(Status status);
 }

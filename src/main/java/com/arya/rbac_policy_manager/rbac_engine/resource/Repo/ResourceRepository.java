@@ -14,7 +14,7 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 
     boolean existsByName(String name);
 
-    Optional<Resource> findByNameAndStatus( String name, Status status );
+    Optional<Resource> findByIdAndStatus( UUID id, Status status );
 
     List<Resource> findByStatus(Status status);
 }

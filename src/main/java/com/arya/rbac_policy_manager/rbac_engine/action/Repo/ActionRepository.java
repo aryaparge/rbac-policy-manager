@@ -14,7 +14,7 @@ public interface ActionRepository extends JpaRepository<Action, UUID> {
 
     boolean existsByName(String name);
 
-    Optional<Action> findByNameAndStatus(String name, Status status);
+    Optional<Action> findByIdAndStatus( UUID id, Status status );
 
     List<Action> findByStatus(Status status);
 }

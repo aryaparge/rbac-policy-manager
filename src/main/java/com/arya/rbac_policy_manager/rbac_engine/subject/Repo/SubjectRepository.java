@@ -10,13 +10,13 @@ import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
 import com.arya.rbac_policy_manager.rbac_engine.subject.entity.Subject;
 
 public interface SubjectRepository extends JpaRepository<Subject, UUID> {
-    Optional<Subject> findBySubjectId(String subjectId);
+    Optional<Subject> findByName(String name);
 
-    Optional<Subject> findById(UUID id);
+    boolean existsByName(String name);
 
-    boolean existsBySubjectId(String subjectId);
+    Optional<Subject> findByNamwAndStatus(String name, Status status);
 
-    Optional<Subject> findBySubjectIdAndStatus(String subjectId, Status status);
+    Optional<Subject> findByIdAndStatus(UUID id, Status status);
 
     List<Subject> findByStatus(Status status);
 
