@@ -22,7 +22,7 @@ import java.util.UUID;
 public class RoleService {
     private final RoleRepository roleRepository;
 
-    private Role getActiveRole(UUID roleId) {
+    public Role getActiveRole(UUID roleId) {
         return roleRepository.findByIdAndStatus(roleId, Status.ACTIVE)
                 .orElseThrow(() -> new ActiveEntityNotFoundException("Role", roleId));
     }

@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -18,7 +19,7 @@ public interface RoleGroupRepository extends JpaRepository<RoleGroup, UUID> {
 
     List<RoleGroup> findByRoleAndStatus(Role role, Status status);
 
-    List<RoleGroup> findByGroup(Group group);
+    Optional<RoleGroup> findByRoleAndGroup(Role role, Group group);
 
     boolean existsByRoleAndGroup( Role role, Group group);
 }

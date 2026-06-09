@@ -20,7 +20,7 @@ import java.util.UUID;
 public class ResourceService {
     private final ResourceRepository resourceRepository;
 
-    private Resource getActiveResource(UUID resourceId) {
+    public Resource getActiveResource(UUID resourceId) {
         return resourceRepository.findByIdAndStatus( resourceId, Status.ACTIVE)
                             .orElseThrow(() -> new ActiveEntityNotFoundException("Resource", resourceId));
     }

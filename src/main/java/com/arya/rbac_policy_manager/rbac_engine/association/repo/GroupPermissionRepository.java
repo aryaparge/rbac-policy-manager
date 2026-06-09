@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -19,6 +20,10 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
     List<GroupPermission> findByGroupAndStatus(Group group, Status status);
 
     List<GroupPermission> findByPermission(Permission permission);
+
+    Optional<GroupPermission> findByGroupAndPermission( Group group, Permission permission);
+
+    List<GroupPermission> findByStatus(Status status);
 
     boolean existsByGroupAndPermission(Group group, Permission permission);
 }

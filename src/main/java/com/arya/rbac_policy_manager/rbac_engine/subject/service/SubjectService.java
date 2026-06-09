@@ -23,7 +23,7 @@ import java.util.UUID;
 public class SubjectService {
     private final SubjectRepository subjectRepository;
 
-    private Subject getActiveSubject(UUID subjectId) {
+    public Subject getActiveSubject(UUID subjectId) {
         return subjectRepository.findByIdAndStatus(subjectId, Status.ACTIVE)
                 .orElseThrow(() -> new ActiveEntityNotFoundException("Subject", subjectId));
     }

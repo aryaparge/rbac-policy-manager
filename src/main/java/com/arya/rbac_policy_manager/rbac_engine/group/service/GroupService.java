@@ -22,7 +22,7 @@ import java.util.UUID;
 public class GroupService {
     private final GroupRepository groupRepository;
 
-    private Group getActiveGroup(UUID groupId) {
+    public Group getActiveGroup(UUID groupId) {
         return groupRepository.findByIdAndStatus(
                 groupId,
                 Status.ACTIVE).orElseThrow(() -> new ActiveEntityNotFoundException("Group", groupId));

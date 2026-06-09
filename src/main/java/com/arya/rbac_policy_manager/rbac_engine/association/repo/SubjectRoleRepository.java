@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 @Repository
@@ -18,7 +19,7 @@ public interface SubjectRoleRepository extends JpaRepository<SubjectRole, UUID> 
 
     List<SubjectRole> findBySubjectAndStatus(Subject subject, Status status);
 
-    List<SubjectRole> findByRole(Role role);
+    Optional<SubjectRole> findBySubjectAndRole(Subject subject, Role role);
 
     boolean existsBySubjectAndRole(Subject subject, Role role);
 }

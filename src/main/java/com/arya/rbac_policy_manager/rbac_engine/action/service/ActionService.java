@@ -25,7 +25,7 @@ import java.util.UUID;
 public class ActionService {
     private final ActionRepository actionRepository;
 
-    private Action getActiveAction(UUID actionId) {
+    public Action getActiveAction(UUID actionId) {
         return actionRepository.findByIdAndStatus(
                 actionId,
                 Status.ACTIVE).orElseThrow(() -> new ActiveEntityNotFoundException("Action", actionId));
@@ -46,6 +46,8 @@ public class ActionService {
         action.setName(name);
         action.setDescription(description);
         action.setStatus(Status.ACTIVE);
+        action.setDeletedAt(null);
+        action.setDisabledAt(null);
 
         return actionRepository.save(action);
     }
@@ -77,6 +79,7 @@ public class ActionService {
 
         action.setStatus(Status.DISABLED);
         action.setDisabledAt(Instant.now());
+
 
         actionRepository.save(action);
     }

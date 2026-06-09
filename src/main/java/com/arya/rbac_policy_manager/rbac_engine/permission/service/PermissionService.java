@@ -30,7 +30,7 @@ public class PermissionService {
     private final ResourceRepository resourceRepository;
     private final ActionRepository actionRepository;
 
-    private Permission getActivePermission(
+    public Permission getActivePermission(
             UUID permissionId
     ) {
         Permission permission = permissionRepository.findByIdAndStatus(permissionId, Status.ACTIVE)
