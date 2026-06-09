@@ -12,20 +12,25 @@ import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupPermissi
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.RoleGroup;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.RolePermission;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.SubjectRole;
+
 import com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice.GroupHierarchyTraversalService;
 import com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice.RoleHierarchyTraversalService;
+
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleGroupRepository;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.RolePermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.SubjectRoleRepository;
-import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
+
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 import com.arya.rbac_policy_manager.rbac_engine.subject.entity.Subject;
+
 import com.arya.rbac_policy_manager.rbac_engine.subject.repo.SubjectRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 
 @Service
@@ -48,12 +53,17 @@ public class PermissionResolutionService {
         Set<Role> reachableRoles = new HashSet<>();
 
         Subject subject = subjectRepository.findById(subjectId).orElseThrow(() -> new EntityNotFoundException("Subject not found."));
+
+        if(subject.getStatus() != Status.ACTIVE) {
+            throw new ActiveEntityNotFoundException("Subject", subjectId);
+        }
         
         List<SubjectRole> srAssignments = subjectRoleRepository.findBySubjectAndStatus(subject, Status.ACTIVE);
         List<Role> assignedRoles = srAssignments.stream().map(SubjectRole::getRole).toList();
 
         for (Role role : assignedRoles)
         {
+            //all roles are active. checked in traversal service.
             reachableRoles.addAll(roleHierarchyTraversalService.getRoleClosure(role));
         }
 
@@ -69,6 +79,7 @@ public class PermissionResolutionService {
 
         for (Role role : reachableRoles)
         {
+            //all groups are active. checked in traversal service.
             List<RoleGroup> rgAssignments = roleGroupRepository.findByRoleAndStatus(role, Status.ACTIVE);
             List<Group> directGroups = rgAssignments.stream().map(RoleGroup::getGroup).toList();
 

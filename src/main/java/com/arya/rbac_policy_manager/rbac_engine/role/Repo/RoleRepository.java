@@ -6,7 +6,7 @@ import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
-import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 
 public interface RoleRepository extends JpaRepository<Role, UUID> {

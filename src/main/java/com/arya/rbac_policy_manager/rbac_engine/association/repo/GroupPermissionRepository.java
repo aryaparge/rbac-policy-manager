@@ -1,7 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.repo;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupPermission;
-import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 

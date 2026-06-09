@@ -2,7 +2,8 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.RoleHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleHierarchyRepository;
-import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 
 import lombok.RequiredArgsConstructor;
@@ -60,9 +61,8 @@ public class RoleHierarchyTraversalService {
     }
 
     public Set<Role> getRoleClosure(Role role) {
-        if(role.getStatus() != Status.ACTIVE)
-        {
-            throw new IllegalArgumentException("Cannot get closure for disabled/deleted role");
+        if(role.getStatus() != Status.ACTIVE) {
+            throw new ActiveEntityNotFoundException("Role", role.getName());
         }
         Set<Role> closure = new HashSet<>();
         Deque<Role> stack = new ArrayDeque<>();

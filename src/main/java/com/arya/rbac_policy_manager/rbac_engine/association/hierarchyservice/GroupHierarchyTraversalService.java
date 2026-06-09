@@ -2,7 +2,8 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupHierarchyRepository;
-import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 
 import lombok.RequiredArgsConstructor;
@@ -62,7 +63,7 @@ public class GroupHierarchyTraversalService {
     public Set<Group> getGroupClosure(Group group) {
         if(group.getStatus() != Status.ACTIVE)
         {
-            throw new IllegalArgumentException("Cannot find closure for disabled/deleted group.");
+            throw new ActiveEntityNotFoundException("Group", group.getName());
         }
         Set<Group> closure = new HashSet<>();
         Deque<Group> stack = new ArrayDeque<>();

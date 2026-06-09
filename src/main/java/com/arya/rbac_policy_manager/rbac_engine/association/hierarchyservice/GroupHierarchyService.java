@@ -2,7 +2,7 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupHierarchyRepository;
-import com.arya.rbac_policy_manager.rbac_engine.common.Enum.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.group.repo.GroupRepository;
 

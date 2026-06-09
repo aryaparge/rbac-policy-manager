@@ -1,6 +1,6 @@
 package com.arya.rbac_policy_manager.rbac_engine.subject.entity;
 
-import com.arya.rbac_policy_manager.rbac_engine.common.Enum.SubjectType;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.SubjectType;
 import com.arya.rbac_policy_manager.rbac_engine.common.entity.BaseEntity;
 
 import jakarta.persistence.*;
