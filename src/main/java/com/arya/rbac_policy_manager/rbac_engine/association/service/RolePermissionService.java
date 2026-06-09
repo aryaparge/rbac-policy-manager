@@ -40,8 +40,8 @@ public class RolePermissionService {
     }
 
     public RolePermission assignPermissionToRole(
-            UUID roleId,
-            UUID permissionId) {
+            UUID permissionId,
+            UUID roleId) {
 
         Role role = roleService.getRole(roleId);
         Permission permission = permissionService.getPermission(permissionId);

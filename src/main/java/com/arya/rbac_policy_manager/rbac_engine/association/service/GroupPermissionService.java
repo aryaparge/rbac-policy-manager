@@ -40,8 +40,8 @@ public class GroupPermissionService {
     }
 
     public GroupPermission assignPermissionToGroup(
-            UUID groupId,
-            UUID permissionId) {
+            UUID permissionId,
+            UUID groupId) {
 
         Group group = groupService.getGroup(groupId);
         Permission permission = permissionService.getPermission(permissionId);

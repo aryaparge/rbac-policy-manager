@@ -48,53 +48,51 @@ public class PermissionResolutionService {
     private final RoleHierarchyTraversalService roleHierarchyTraversalService;
     private final GroupHierarchyTraversalService groupHierarchyTraversalService;
 
-    public Set<Permission> resolvePermissions(UUID subjectId)
-    {
+    public Set<Permission> resolvePermissions(UUID subjectId) {
         Set<Role> reachableRoles = new HashSet<>();
 
-        Subject subject = subjectRepository.findById(subjectId).orElseThrow(() -> new EntityNotFoundException("Subject not found."));
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new EntityNotFoundException("Subject not found."));
 
-        if(subject.getStatus() != Status.ACTIVE) {
+        if (subject.getStatus() != Status.ACTIVE) {
             throw new ActiveEntityNotFoundException("Subject", subjectId);
         }
-        
+
         List<SubjectRole> srAssignments = subjectRoleRepository.findBySubjectAndStatus(subject, Status.ACTIVE);
         List<Role> assignedRoles = srAssignments.stream().map(SubjectRole::getRole).toList();
 
-        for (Role role : assignedRoles)
-        {
-            //all roles are active. checked in traversal service.
+        for (Role role : assignedRoles) {
+            // all roles are active. checked in traversal service.
             reachableRoles.addAll(roleHierarchyTraversalService.getRoleClosure(role));
         }
 
         Set<Permission> permissions = new HashSet<>();
 
-        for (Role role : reachableRoles)
-        {
+        for (Role role : reachableRoles) {
             Set<RolePermission> rpAssignments = rolePermissionRepository.findByRoleAndStatus(role, Status.ACTIVE);
             permissions.addAll(rpAssignments.stream().map(RolePermission::getPermission).collect(Collectors.toSet()));
         }
 
         Set<Group> reachableGroups = new HashSet<>();
 
-        for (Role role : reachableRoles)
-        {
-            //all groups are active. checked in traversal service.
+        for (Role role : reachableRoles) {
+            // all groups are active. checked in traversal service.
             List<RoleGroup> rgAssignments = roleGroupRepository.findByRoleAndStatus(role, Status.ACTIVE);
             List<Group> directGroups = rgAssignments.stream().map(RoleGroup::getGroup).toList();
 
-            for (Group group : directGroups)
-            {
+            for (Group group : directGroups) {
                 reachableGroups.addAll(groupHierarchyTraversalService.getGroupClosure(group));
             }
         }
 
-        for (Group group : reachableGroups)
-        {
+        for (Group group : reachableGroups) {
             List<GroupPermission> gpAssignments = groupPermissionRepository.findByGroupAndStatus(group, Status.ACTIVE);
             permissions.addAll(gpAssignments.stream().map(GroupPermission::getPermission).collect(Collectors.toSet()));
         }
-
+        System.out.println(
+                permissions.stream()
+                        .map(Permission::getName)
+                        .toList());
         return permissions;
     }
 }

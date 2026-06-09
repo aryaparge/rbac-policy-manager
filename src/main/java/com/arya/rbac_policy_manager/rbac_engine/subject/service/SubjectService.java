@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.subject.service;
 
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.Enums.SubjectType;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
@@ -29,9 +30,9 @@ public class SubjectService {
     }
 
     public Subject createSubject(
-        UUID subjectId, 
         String name, 
-        String displayName, 
+        String displayName,
+        SubjectType subjectType, 
         String description) {
         Optional<Subject> existing = subjectRepository.findByName(name);
 
@@ -44,6 +45,7 @@ public class SubjectService {
         subject.setName(name);
         subject.setDisplayName(displayName);
         subject.setDescription(description);
+        subject.setSubjectType(subjectType);
         subject.setStatus(Status.ACTIVE);
 
         return subjectRepository.save(subject);

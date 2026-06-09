@@ -39,7 +39,7 @@ public class SubjectRoleService {
         return assignment;
     }
 
-    public SubjectRole assignRoleToSubject(
+    public SubjectRole assignSubjectToRole(
             UUID subjectId,
             UUID roleId) {
 

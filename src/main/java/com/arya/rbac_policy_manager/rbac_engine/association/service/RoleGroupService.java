@@ -39,7 +39,7 @@ public class RoleGroupService {
         return assignment;
     }
 
-    public RoleGroup assignGroupToRole(
+    public RoleGroup assignRoleToGroup(
             UUID roleId,
             UUID groupId) {
 

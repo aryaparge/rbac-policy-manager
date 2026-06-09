@@ -3,6 +3,7 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.RoleHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleHierarchyRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 import com.arya.rbac_policy_manager.rbac_engine.role.repo.RoleRepository;
 
@@ -11,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,40 +24,31 @@ public class RoleHierarchyService {
         private final RoleHierarchyRepository roleHierarchyRepository;
         private final RoleHierarchyValidationService validationService;
 
-        public void createRelationship(UUID parentRoleId, UUID childRoleId) {
+        public Optional<RoleHierarchy> createRelationship(UUID parentRoleId, UUID childRoleId) {
 
                 Role parent = getActiveRole(parentRoleId);
                 Role child = getActiveRole(childRoleId);
 
-                RoleHierarchy existing = getRelationship(parentRoleId, childRoleId);
+                Optional<RoleHierarchy> existing = roleHierarchyRepository.findByParentRoleAndChildRole(parent, child);
 
-                if (existing != null && existing.getStatus() == Status.ACTIVE) {
-                        throw new IllegalArgumentException("Relationship already exists");
+                if(existing.isPresent())
+                {
+                        throw new DuplicateEntityException("RoleHeirarchy", parent.getName() + " -> " + child.getName(), existing.get().getStatus());
                 }
 
                 validationService.validateSelfReference(parent, child);
                 validationService.validateNoCycle(parent, child);
                 validationService.validateDepthLimit(parent, child);
 
-                if (existing == null) {
+                RoleHierarchy edge = new RoleHierarchy();
 
-                        RoleHierarchy edge = new RoleHierarchy();
+                edge.setParentRole(parent);
+                edge.setChildRole(child);
+                edge.setStatus(Status.ACTIVE);
 
-                        edge.setParentRole(parent);
-                        edge.setChildRole(child);
-                        edge.setStatus(Status.ACTIVE);
+                roleHierarchyRepository.save(edge);
 
-                        roleHierarchyRepository.save(edge);
-                }
-                // improve the following two cases post lifecycle cleanup implementation.
-                else if (existing.getStatus() == Status.DISABLED) {
-                        enableRelationship(parentRoleId, childRoleId);
-                }
-
-                else if (existing.getStatus() == Status.DELETED) {
-
-                        restoreRelationship(parentRoleId, childRoleId);
-                }
+                return Optional.ofNullable(edge);
         }
 
         public void enableRelationship(UUID parentRoleId, UUID childRoleId) {
@@ -105,14 +98,17 @@ public class RoleHierarchyService {
                 if (edge.getStatus() == Status.DISABLED) {
                         edge.setStatus(Status.DELETED);
                 } else if (edge.getStatus() == Status.ACTIVE) {
-                        System.out.println("Active relationship cannot be directly deleted, disabling relationship.");//change to log.
+                        System.out.println("Active relationship cannot be directly deleted, disabling relationship.");// change
+                                                                                                                      // to
+                                                                                                                      // log.
                         disableRelationship(parentRoleId, childRoleId);
                 }
         }
 
         private Role getActiveRole(UUID roleId) {
 
-                Role role = roleRepository.findById(roleId).orElseThrow(() -> new EntityNotFoundException("Role not found"));
+                Role role = roleRepository.findById(roleId)
+                                .orElseThrow(() -> new EntityNotFoundException("Role not found"));
 
                 if (role.getStatus() != Status.ACTIVE) {
                         throw new IllegalStateException("Role must be ACTIVE");

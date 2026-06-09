@@ -3,14 +3,16 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupHierarchyRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.group.repo.GroupRepository;
 
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -22,23 +24,21 @@ public class GroupHierarchyService {
         private final GroupHierarchyRepository groupHierarchyRepository;
         private final GroupHierarchyValidationService validationService;
 
-        public void createRelationship(UUID parentGroupId, UUID childGroupId) {
+        public Optional<GroupHierarchy> createRelationship(UUID parentGroupId, UUID childGroupId) {
 
                 Group parent = getActiveGroup(parentGroupId);
                 Group child = getActiveGroup(childGroupId);
 
-                GroupHierarchy existing = getRelationship(parentGroupId, childGroupId);
+                Optional<GroupHierarchy> existing = groupHierarchyRepository.findByParentGroupAndChildGroup(parent, child);
 
-                if(existing != null && existing.getStatus() == Status.ACTIVE)
+                if(existing.isPresent())
                 {
-                        throw new IllegalArgumentException("Relationship already exists");
+                        throw new DuplicateEntityException("GroupHeirarchy", parent.getName() + " -> " + child.getName(), existing.get().getStatus());
                 }
                 
                 validationService.validateSelfReference(parent, child);
                 validationService.validateNoCycle(parent, child);
                 validationService.validateDepthLimit(parent, child);
-
-                if(existing == null) {
 
                 GroupHierarchy edge = new GroupHierarchy();
 
@@ -47,18 +47,8 @@ public class GroupHierarchyService {
                 edge.setStatus(Status.ACTIVE);
 
                 groupHierarchyRepository.save(edge);
-                }
-                //improve the following two cases post lifecycle cleanup implementation.
-                else if(existing.getStatus() == Status.DISABLED)
-                {
-                        enableRelationship(parentGroupId, childGroupId);
-                }
 
-                else if(existing.getStatus() == Status.DELETED)
-                {
-
-                        restoreRelationship(parentGroupId, childGroupId);
-                }
+                return Optional.ofNullable(edge);
         }
 
         public void enableRelationship(UUID parentGroupId, UUID childGroupId) {

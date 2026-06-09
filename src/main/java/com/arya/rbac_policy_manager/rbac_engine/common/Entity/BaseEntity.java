@@ -6,9 +6,11 @@ import lombok.Setter;
 
 import java.util.UUID;
 
+import org.springframework.context.annotation.Configuration;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing;
 
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 
@@ -17,6 +19,8 @@ import java.time.Instant;
 @Setter
 @Getter
 @MappedSuperclass
+@Configuration
+@EnableJpaAuditing
 @EntityListeners(AuditingEntityListener.class)
 public class BaseEntity {
     @Id
