@@ -41,3 +41,6 @@ target/
 ### application properties ###
 src/main/resources/application-local.properties
 .DS_Store
+
+### personal notes ###
+src/test/java/com/arya/rbac_policy_manager/unit/testnotes.txt
