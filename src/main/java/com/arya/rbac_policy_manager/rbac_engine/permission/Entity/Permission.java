@@ -24,7 +24,7 @@ public class Permission extends BaseEntity {
     private Action action;
 
     @Column(nullable = false)
-    private String name = action.getName() + "_" + resource.getName();
+    private String name;
 
     private String description;
 }
