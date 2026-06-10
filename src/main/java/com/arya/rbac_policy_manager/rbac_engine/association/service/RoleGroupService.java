@@ -71,29 +71,31 @@ public class RoleGroupService {
 
         assignment.setStatus(Status.DISABLED);
         assignment.setDisabledAt(Instant.now());
+        assignment.setDeletedAt(null); // Clear deletedAt in case it was previously marked deleted.
 
         roleGroupRepository.save(assignment);
     }
 
-    public void deleteAssignment(UUID assignmentId) {
+    public void enableAssignment(UUID assignmentId) {
 
-        RoleGroup assignment =
-                roleGroupRepository.findById(assignmentId)
-                        .orElseThrow(() -> new EntityNotFoundException("RoleGroup not found"));
+        RoleGroup assignment = roleGroupRepository.findById(assignmentId)
+                .orElseThrow(() -> new EntityNotFoundException("RoleGroup not found"));
 
         if (assignment.getStatus() == Status.ACTIVE) {
             throw new InvalidEntityStateException(
-                    "Active assignment cannot be deleted. Disable it first.");
+                    "Assignment is already active.");
         }
 
         if (assignment.getStatus() == Status.DELETED) {
             throw new InvalidEntityStateException(
-                    "Assignment already deleted.");
+                    "Deleted assignment cannot be enabled. Create a new assignment instead.");
         }
 
-        assignment.setStatus(Status.DELETED);
-        assignment.setDeletedAt(Instant.now());
+        assignment.setStatus(Status.ACTIVE);
+        assignment.setDisabledAt(null); // Clear disabledAt.
+        assignment.setDeletedAt(null); // Clear deletedAt.
 
         roleGroupRepository.save(assignment);
     }
+    //Manual deletion of a RoleGroup assignment is not allowed. It must be disabled first, then a scheduled job will permanently delete it after a retention period.
 }

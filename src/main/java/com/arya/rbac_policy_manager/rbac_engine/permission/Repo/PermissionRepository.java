@@ -1,10 +1,13 @@
 package com.arya.rbac_policy_manager.rbac_engine.permission.repo;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 
 import com.arya.rbac_policy_manager.rbac_engine.action.entity.Action;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
@@ -16,9 +19,48 @@ public interface PermissionRepository extends JpaRepository<Permission, UUID> {
 
         boolean existsByResourceAndAction( Resource resource, Action action);
 
+        List<Permission> findByActionAndStatus( Action action, Status status );
+
+        List<Permission> findByResourceAndStatus( Resource resource, Status status );
+
         Optional<Permission> findByResourceAndActionAndStatus( Resource resource, Action action, Status status );
 
         Optional<Permission> findByIdAndStatus(UUID id, Status status);
 
         List<Permission> findByStatus(Status status);
+
+        @Modifying
+        @Query("""
+            update Permission p
+            set p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
+                p.disabledAt = :disabledAt,
+                p.deletedAt = null -- Clear deletedAt when marking as disabled
+            where p.status <> com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+            and (
+                    p.resource.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                 or p.action.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+            )
+        """)
+        int cascadedMarkPermissionsAsDisabled(Instant disabledAt);
+
+
+        @Modifying
+        @Query("""
+            update Permission p
+            set p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
+                p.deletedAt = :deletedAt
+            where p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+            and p.disabledAt is not null
+            and p.disabledAt <= :cutoff
+        """)
+        int markDisabledPermissionsAsDeleted( Instant cutoff, Instant deletedAt );
+
+        @Modifying
+        @Query("""
+            delete from Permission p
+            where p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED
+            and p.deletedAt is not null
+            and p.deletedAt <= :cutoff
+        """)
+        int hardDeleteExpiredPermissions( Instant cutoff );
 }

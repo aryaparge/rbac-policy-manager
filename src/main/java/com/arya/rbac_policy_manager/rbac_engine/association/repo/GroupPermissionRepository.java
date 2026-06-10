@@ -6,8 +6,11 @@ import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -26,4 +29,38 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
     List<GroupPermission> findByStatus(Status status);
 
     boolean existsByGroupAndPermission(Group group, Permission permission);
+
+    @Modifying
+    @Query("""
+                update GroupPermission gp
+                set gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED,
+                    gp.disabledAt = :disabledAt
+                    gp.deletedAt = null -- Clear deletedAt when marking as disabled
+                where gp.status <> com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                and (
+                        gp.group.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                     or gp.permission.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                )
+            """)
+    int cascadedMarkGroupPermissionsAsDisabled(Instant disabledAt);
+
+    @Modifying 
+    @Query("""
+                update GroupPermission gp
+                set gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED,
+                    gp.deletedAt = :deletedAt
+                where gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                and gp.disabledAt is not null
+                and gp.disabledAt <= :cutoff
+            """)
+    int markDisabledGroupPermissionsAsDeleted(Instant cutoff, Instant deletedAt);
+
+    @Modifying
+    @Query("""
+                delete from GroupPermission gp
+                where gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED
+                and gp.deletedAt is not null
+                and gp.deletedAt <= :cutoff
+            """)
+    int hardDeleteExpiredGroupPermissions(Instant cutoff);
 }

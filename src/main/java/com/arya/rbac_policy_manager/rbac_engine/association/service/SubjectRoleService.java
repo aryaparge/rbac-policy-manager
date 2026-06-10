@@ -70,28 +70,27 @@ public class SubjectRoleService {
 
         assignment.setStatus(Status.DISABLED);
         assignment.setDisabledAt(Instant.now());
+        assignment.setDeletedAt(null); // Clear deletedAt in case it was previously marked deleted.
 
         subjectRoleRepository.save(assignment);
     }
 
-    public void deleteAssignment(UUID assignmentId) {
+    public void enableAssignment(UUID assignmentId) {
 
         SubjectRole assignment = subjectRoleRepository.findById(assignmentId)
                 .orElseThrow(() -> new EntityNotFoundException("SubjectRole not found"));
 
-        if (assignment.getStatus() == Status.ACTIVE) {
+        if (assignment.getStatus() != Status.DISABLED) {
             throw new InvalidEntityStateException(
-                    "Active assignment cannot be deleted. Disable it first.");
+                    "Only disabled assignments can be enabled.");
         }
 
-        if (assignment.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException(
-                    "Assignment already deleted.");
-        }
-
-        assignment.setStatus(Status.DELETED);
-        assignment.setDeletedAt(Instant.now());
+        assignment.setStatus(Status.ACTIVE);
+        assignment.setDisabledAt(null); // Clear disabledAt.
+        assignment.setDeletedAt(null); // Clear deletedAt in case it was previously marked deleted.
 
         subjectRoleRepository.save(assignment);
     }
+
+    // Manual deletion of a SubjectRole assignment is not allowed. It must be disabled first, then a scheduled job will permanently delete it after a retention period.
 }

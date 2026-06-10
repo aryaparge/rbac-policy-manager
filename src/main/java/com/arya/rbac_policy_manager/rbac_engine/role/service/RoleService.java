@@ -1,5 +1,9 @@
 package com.arya.rbac_policy_manager.rbac_engine.role.service;
 
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleGroupRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleHierarchyRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.RolePermissionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.SubjectRoleRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
@@ -7,6 +11,7 @@ import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundE
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 import com.arya.rbac_policy_manager.rbac_engine.role.repo.RoleRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -21,6 +26,11 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class RoleService {
     private final RoleRepository roleRepository;
+
+    private final RolePermissionRepository rolePermissionRepository;
+    private final RoleGroupRepository roleGroupRepository;
+    private final SubjectRoleRepository subjectRoleRepository;
+    private final RoleHierarchyRepository roleHierarchyRepository;
 
     public Role getActiveRole(UUID roleId) {
         return roleRepository.findByIdAndStatus(roleId, Status.ACTIVE)
@@ -70,14 +80,21 @@ public class RoleService {
     public void disableRole(UUID roleId) {
         Role role = getActiveRole(roleId);
 
-        role.setStatus(Status.DISABLED);
-        role.setDisabledAt(Instant.now());
-        role.setDeletedAt(null);
+        Instant now = Instant.now();
 
+        role.setStatus(Status.DISABLED);
+        role.setDisabledAt(now);
+        role.setDeletedAt(null); // Clear deletedAt.
         roleRepository.save(role);
+
+        subjectRoleRepository.cascadedMarkSubjectRolesAsDisabled(now);
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabled(now);
+        roleGroupRepository.cascadedMarkRoleGroupsAsDisabled(now);
+        roleHierarchyRepository.cascadedMarkRoleHierarchiesAsDisabled(now);
     }
 
     public void enableRole(UUID roleId) {
+        // Enabling a role deos not automatically re-enable associated permissions or group associations. Those must be managed separately.
         Role role = roleRepository.findById(roleId)
                 .orElseThrow(() -> new EntityNotFoundException("Role not found"));     
         
@@ -95,20 +112,5 @@ public class RoleService {
         roleRepository.save(role);
     }
 
-    public void deleteRole(UUID roleId) {
-        Role role = roleRepository.findById(roleId).orElseThrow(() -> new EntityNotFoundException("Role not found"));
-
-        if (role.getStatus() == Status.ACTIVE) {
-            throw new InvalidEntityStateException("Active role cannot be deleted. Consider disabling instead.");
-        }
-
-        else if (role.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException("Role already deleted.");
-        }
-
-        role.setStatus(Status.DELETED);
-        role.setDeletedAt(Instant.now());
-
-        roleRepository.save(role);
-    }
+    // Manual deletion of roles is not allowed. Disable the role and let the scheduled cleanup handle deletion.
 }

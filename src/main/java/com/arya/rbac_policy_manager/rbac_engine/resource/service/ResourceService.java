@@ -1,10 +1,13 @@
 package com.arya.rbac_policy_manager.rbac_engine.resource.service;
 
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.RolePermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
+import com.arya.rbac_policy_manager.rbac_engine.permission.repo.PermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.resource.entity.Resource;
 import com.arya.rbac_policy_manager.rbac_engine.resource.repo.ResourceRepository;
 import lombok.RequiredArgsConstructor;
@@ -21,6 +24,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class ResourceService {
     private final ResourceRepository resourceRepository;
+
+    private final RolePermissionRepository rolePermissionRepository;
+    private final GroupPermissionRepository groupPermissionRepository;
+    private final PermissionRepository permissionRepository;
 
     public Resource getActiveResource(UUID resourceId) {
         return resourceRepository.findByIdAndStatus( resourceId, Status.ACTIVE)
@@ -73,14 +80,20 @@ public class ResourceService {
     public void disableResource(UUID resourceId) {
         Resource resource = getActiveResource(resourceId);
 
-        resource.setStatus(Status.DISABLED);
-        resource.setDisabledAt(Instant.now());
-        resource.setDeletedAt(null); //ensure deletedAt is null.
+        Instant now = Instant.now();
 
+        resource.setStatus(Status.DISABLED);
+        resource.setDisabledAt(now);
+        resource.setDeletedAt(null); //ensure deletedAt is null.
         resourceRepository.save(resource);
+
+        permissionRepository.cascadedMarkPermissionsAsDisabled(now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabled(now);
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabled(now);
     }
 
     public void enableResource(UUID resourceId) {
+        // Enabling a resource does not automatically enable related entities. They must be manually enabled if needed.
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
 
@@ -98,20 +111,5 @@ public class ResourceService {
 
         resourceRepository.save(resource);
     }   
-
-    public void deleteResource(UUID resourceId) {
-        Resource resource = resourceRepository.findById(resourceId).orElseThrow(() -> new EntityNotFoundException("Resource not found"));
-
-        if(resource.getStatus() == Status.ACTIVE) {
-            throw new InvalidEntityStateException("Active resource cannot be deleted. Consider disabling instead");
-        }
-
-        if(resource.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException("Resource already deleted.");
-        }
-
-        resource.setStatus(Status.DELETED);
-
-        resourceRepository.save(resource);
-    }
+    // Manual deletion of resources is not allowed. Disable the resource and let the scheduled cleanup handle the rest.
 }

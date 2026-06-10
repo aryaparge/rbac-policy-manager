@@ -46,11 +46,11 @@ public class GroupPermissionService {
         Group group = groupService.getGroup(groupId);
         Permission permission = permissionService.getPermission(permissionId);
 
-        Optional<GroupPermission> existing =
-                groupPermissionRepository.findByGroupAndPermission(group, permission);
+        Optional<GroupPermission> existing = groupPermissionRepository.findByGroupAndPermission(group, permission);
 
         if (existing.isPresent()) {
-            throw new DuplicateEntityException("GroupPermission", group.getName() + " -> " + permission.getName(), existing.get().getStatus());
+            throw new DuplicateEntityException("GroupPermission", group.getName() + " -> " + permission.getName(),
+                    existing.get().getStatus());
         }
 
         GroupPermission assignment = new GroupPermission();
@@ -63,34 +63,38 @@ public class GroupPermissionService {
     }
 
     public void disableAssignment(UUID assignmentId) {
-
+        // disabled association does not need cascading disable of related entities.
         GroupPermission assignment = getActiveAssignment(assignmentId);
 
         assignment.setStatus(Status.DISABLED);
         assignment.setDisabledAt(Instant.now());
+        assignment.setDeletedAt(null); // Clear deletedAt.
 
         groupPermissionRepository.save(assignment);
     }
 
-    public void deleteAssignment(UUID assignmentId) {
+    public void enableAssignment(UUID assignmentId) {
 
-        GroupPermission assignment =
-                groupPermissionRepository.findById(assignmentId)
-                        .orElseThrow(() -> new EntityNotFoundException("GroupPermission not found"));
+        GroupPermission assignment = groupPermissionRepository.findById(assignmentId)
+                .orElseThrow(() -> new EntityNotFoundException("GroupPermission not found"));
 
         if (assignment.getStatus() == Status.ACTIVE) {
             throw new InvalidEntityStateException(
-                    "Active assignment cannot be deleted. Disable it first.");
+                    "Assignment is already active.");
         }
 
         if (assignment.getStatus() == Status.DELETED) {
             throw new InvalidEntityStateException(
-                    "Assignment already deleted.");
+                    "Deleted assignment cannot be enabled. Create a new assignment instead.");
         }
 
-        assignment.setStatus(Status.DELETED);
-        assignment.setDeletedAt(Instant.now());
+        assignment.setStatus(Status.ACTIVE);
+        assignment.setDisabledAt(null); // Clear disabledAt.
+        assignment.setDeletedAt(null); // Clear deletedAt.
 
         groupPermissionRepository.save(assignment);
     }
+    // Manual deletion of a GroupPermission assignment is not allowed. It must be
+    // disabled first, then a scheduled job will permanently delete it after a
+    // retention period.
 }

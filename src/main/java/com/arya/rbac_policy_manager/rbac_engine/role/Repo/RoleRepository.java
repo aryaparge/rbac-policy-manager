@@ -24,15 +24,21 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
     @Modifying
     @Query("""
         update Role r
-        set r.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED,
+        set r.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
             r.deletedAt = :deletedAt
-        where r.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+        where r.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
         and r.disabledAt is not null
         and r.disabledAt <= :cutoff
     """)
 
-    int markDisabledRolesAsDeleted(
-        Instant cutoff,
-        Instant deletedAt
-    );
+    int markDisabledRolesAsDeleted( Instant cutoff, Instant deletedAt );
+
+    @Modifying
+    @Query("""
+        delete from Role r
+        where r.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED
+        and r.deletedAt is not null
+        and r.deletedAt <= :cutoff
+    """)
+    int hardDeleteExpiredRoles(Instant cutoff);
 }

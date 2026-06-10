@@ -1,5 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.group.service;
 
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleGroupRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
@@ -21,6 +23,9 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class GroupService {
     private final GroupRepository groupRepository;
+
+    private final GroupPermissionRepository groupPermissionRepository;
+    private final RoleGroupRepository roleGroupRepository;
 
     public Group getActiveGroup(UUID groupId) {
         return groupRepository.findByIdAndStatus(
@@ -69,14 +74,20 @@ public class GroupService {
     public void disableGroup(UUID groupId) {
         Group group = getActiveGroup(groupId);
 
-        group.setStatus(Status.DISABLED);
-        group.setDisabledAt(Instant.now());
-        group.setDeletedAt(null); //ensure deletedAt is null.
+        Instant now = Instant.now();
 
+        group.setStatus(Status.DISABLED);
+        group.setDisabledAt(now);
+        group.setDeletedAt(null); // ensure deletedAt is null.
         groupRepository.save(group);
+
+        roleGroupRepository.cascadedMarkRoleGroupsAsDisabled(now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabled(now);
     }
 
     public void enableGroup(UUID groupId) {
+        // Enabling a group does not automatically enable related entities. They must be
+        // enabled separately if needed.
         Group group = groupRepository.findById(groupId)
                 .orElseThrow(() -> new EntityNotFoundException("Group not found"));
 
@@ -89,27 +100,12 @@ public class GroupService {
         }
 
         group.setStatus(Status.ACTIVE);
-        group.setDisabledAt(null); //ensure disabledAt is null.
-        group.setDeletedAt(null); //ensure deletedAt is null.
+        group.setDisabledAt(null); // ensure disabledAt is null.
+        group.setDeletedAt(null); // ensure deletedAt is null.
 
         groupRepository.save(group);
     }
 
-    public void deleteGroup(UUID groupId) {
-        Group group = groupRepository.findById(groupId)
-                .orElseThrow(() -> new EntityNotFoundException("Group not found"));
-
-        if (group.getStatus() == Status.ACTIVE) {
-            throw new InvalidEntityStateException("Active group cannot be deleted. Consider disabling instead");
-        }
-
-        else if (group.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException("Group already deleted.");
-        }
-
-        group.setStatus(Status.DELETED);
-        group.setDeletedAt(Instant.now());
-
-        groupRepository.save(group);
-    }
+    // Manual deletion of group is not allowed. It must be disabled first, then a
+    // scheduled job will permanently delete it after a retention period.
 }

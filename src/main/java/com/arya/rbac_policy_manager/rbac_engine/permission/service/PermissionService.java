@@ -9,11 +9,11 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.arya.rbac_policy_manager.rbac_engine.action.entity.Action;
 import com.arya.rbac_policy_manager.rbac_engine.action.repo.ActionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.RolePermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
-import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
-import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 import com.arya.rbac_policy_manager.rbac_engine.permission.repo.PermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.resource.entity.Resource;
@@ -29,6 +29,9 @@ public class PermissionService {
     private final PermissionRepository permissionRepository;
     private final ResourceRepository resourceRepository;
     private final ActionRepository actionRepository;
+
+    private final RolePermissionRepository rolePermissionRepository;
+    private final GroupPermissionRepository groupPermissionRepository;
 
     public Permission getActivePermission(
             UUID permissionId) {
@@ -78,14 +81,19 @@ public class PermissionService {
     public void disablePermission(UUID permissionId) {
         Permission permission = getActivePermission(permissionId);
 
-        permission.setStatus(Status.DISABLED);
-        permission.setDisabledAt(Instant.now());
-        permission.setDeletedAt(null); //ensure deletedAt is null.
+        Instant now = Instant.now();
 
+        permission.setStatus(Status.DISABLED);
+        permission.setDisabledAt(now);
+        permission.setDeletedAt(null); // ensure deletedAt is null.
         permissionRepository.save(permission);
+
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabled(now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabled(now);
     }
 
     public void enablePermission(UUID permissionId) {
+        // Enabling a permission does not automatically enable related entities. They must be manually enabled if needed.
         Permission permission = permissionRepository.findByIdAndStatus(permissionId, Status.DISABLED)
                 .orElseThrow(() -> new ActiveEntityNotFoundException("Disabled Permission", permissionId));
 
@@ -96,20 +104,4 @@ public class PermissionService {
         permissionRepository.save(permission);
     }
 
-    public void deletePermission(UUID permissionId) {
-        Permission permission = permissionRepository.findById(permissionId)
-                .orElseThrow(() -> new EntityNotFoundException("Permission not found"));
-
-        if (permission.getStatus() == Status.ACTIVE) {
-            throw new InvalidEntityStateException("Active permission cannot be deleted. Consider disabling instead");
-        }
-
-        else if (permission.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException("Permission already deleted.");
-        }
-
-        permission.setStatus(Status.DELETED);
-
-        permissionRepository.save(permission);
-    }
 }

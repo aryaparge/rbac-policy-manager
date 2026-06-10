@@ -1,5 +1,6 @@
 package com.arya.rbac_policy_manager.rbac_engine.subject.service;
 
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.SubjectRoleRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.SubjectType;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
@@ -24,19 +25,21 @@ import java.util.UUID;
 public class SubjectService {
     private final SubjectRepository subjectRepository;
 
+    private final SubjectRoleRepository subjectRoleRepository;
+
     public Subject getActiveSubject(UUID subjectId) {
         return subjectRepository.findByIdAndStatus(subjectId, Status.ACTIVE)
                 .orElseThrow(() -> new ActiveEntityNotFoundException("Subject", subjectId));
     }
 
     public Subject createSubject(
-        String name, 
-        String displayName,
-        SubjectType subjectType, 
-        String description) {
+            String name,
+            String displayName,
+            SubjectType subjectType,
+            String description) {
         Optional<Subject> existing = subjectRepository.findByName(name);
 
-         if (existing.isPresent()) {
+        if (existing.isPresent()) {
             throw new DuplicateEntityException("Subject", name, existing.get().getStatus());
         }
 
@@ -53,7 +56,7 @@ public class SubjectService {
 
     public Subject updateSubject(
             UUID subjectId,
-            //name is immutable
+            // name is immutable
             String displayName,
             String description) {
 
@@ -78,14 +81,19 @@ public class SubjectService {
     public void disableSubject(UUID subjectId) {
         Subject subject = getActiveSubject(subjectId);
 
-        subject.setStatus(Status.DISABLED);
-        subject.setDisabledAt(Instant.now());
-        subject.setDeletedAt(null);
+        Instant now = Instant.now();
 
+        subject.setStatus(Status.DISABLED);
+        subject.setDisabledAt(now);
+        subject.setDeletedAt(null);
         subjectRepository.save(subject);
+
+        subjectRoleRepository.cascadedMarkSubjectRolesAsDisabled(now);
     }
 
     public void enableSubject(UUID subjectId) {
+        // Enabling a subject does not automatically enable its associated subject-role
+        // relationships. They need to be enabled separately if needed.
         Subject subject = subjectRepository.findById(subjectId)
                 .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
 
@@ -94,7 +102,8 @@ public class SubjectService {
         }
 
         else if (subject.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException("Deleted subject cannot be enabled. New subject can be created after retention period.");
+            throw new InvalidEntityStateException(
+                    "Deleted subject cannot be enabled. New subject can be created after retention period.");
         }
 
         subject.setStatus(Status.ACTIVE);
@@ -103,22 +112,6 @@ public class SubjectService {
 
         subjectRepository.save(subject);
     }
-
-    public void deleteSubject(UUID subjectId) {
-        Subject subject = subjectRepository.findById(subjectId)
-                .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
-
-        if (subject.getStatus() == Status.ACTIVE) {
-            throw new InvalidEntityStateException("Active subject cannot be deleted. Consider disabling instead");
-        }
-
-        else if (subject.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException("Subject already deleted.");
-        }
-
-        subject.setStatus(Status.DELETED);
-        subject.setDeletedAt(Instant.now());
-
-        subjectRepository.save(subject);
-    }
+    // Manual deletion of subjects is not allowed. It must be disabled first, then a
+    // scheduled job will permanently delete it after a retention period.
 }
