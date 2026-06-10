@@ -27,6 +27,8 @@ public interface RoleHierarchyRepository extends JpaRepository<RoleHierarchy, UU
 
         Optional<RoleHierarchy> findByParentRoleAndChildRole(Role parentRole, Role childRole);
 
+        Optional<RoleHierarchy> findByParentRoleAndChildRoleAndStatus(Role parentRole, Role childRole, Status status);
+
         @Modifying
         @Query("""
                         update RoleHierarchy rh

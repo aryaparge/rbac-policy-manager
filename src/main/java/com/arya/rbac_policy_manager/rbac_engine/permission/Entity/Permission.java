@@ -16,6 +16,7 @@ public class Permission extends BaseEntity {
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false) // lazy to avoid overfetching, still not convinced that eager
                                                          // isnt needed here.
+                                                         //research this more and decide.
     @JoinColumn(name = "resource_id", nullable = false)
     private Resource resource;
 

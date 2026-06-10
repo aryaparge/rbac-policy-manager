@@ -3,8 +3,10 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupHierarchyRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
+import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.group.repo.GroupRepository;
 
@@ -12,6 +14,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,13 +32,14 @@ public class GroupHierarchyService {
                 Group parent = getActiveGroup(parentGroupId);
                 Group child = getActiveGroup(childGroupId);
 
-                Optional<GroupHierarchy> existing = groupHierarchyRepository.findByParentGroupAndChildGroup(parent, child);
+                Optional<GroupHierarchy> existing = groupHierarchyRepository.findByParentGroupAndChildGroup(parent,
+                                child);
 
-                if(existing.isPresent())
-                {
-                        throw new DuplicateEntityException("GroupHeirarchy", parent.getName() + " -> " + child.getName(), existing.get().getStatus());
+                if (existing.isPresent()) {
+                        throw new DuplicateEntityException("GroupHeirarchy",
+                                        parent.getName() + " -> " + child.getName(), existing.get().getStatus());
                 }
-                
+
                 validationService.validateSelfReference(parent, child);
                 validationService.validateNoCycle(parent, child);
                 validationService.validateDepthLimit(parent, child);
@@ -45,6 +49,8 @@ public class GroupHierarchyService {
                 edge.setParentGroup(parent);
                 edge.setChildGroup(child);
                 edge.setStatus(Status.ACTIVE);
+                edge.setDeletedAt(null);
+                edge.setDisabledAt(null);
 
                 groupHierarchyRepository.save(edge);
 
@@ -52,57 +58,38 @@ public class GroupHierarchyService {
         }
 
         public void enableRelationship(UUID parentGroupId, UUID childGroupId) {
-                GroupHierarchy edge = getRelationship(parentGroupId, childGroupId);
-                enable(edge);
-        }
+                GroupHierarchy edge = groupHierarchyRepository.findByParentGroupAndChildGroup(null, null)
+                                .orElseThrow(() -> new EntityNotFoundException("Group Heirarchy not found"));
 
-        private void enable(GroupHierarchy edge) {// test ValidateNoCycle logic.
+                if (edge.getStatus() != Status.DISABLED) {
+                        throw new InvalidEntityStateException(
+                                        "Only disabled edges can be enabled.");
+                }
+
                 validationService.validateNoCycle(edge.getParentGroup(), edge.getChildGroup());
-
                 validationService.validateDepthLimit(edge.getParentGroup(), edge.getChildGroup());
 
                 edge.setStatus(Status.ACTIVE);
-        }
+                edge.setDisabledAt(null); // Clear disabledAt.
+                edge.setDeletedAt(null); // Clear deletedAt in case it was previously marked deleted.
 
-        public void restoreRelationship(UUID parentGroupId, UUID childGroupId) {
-                GroupHierarchy edge = getRelationship(parentGroupId, childGroupId);
-                restore(edge);
-        }
-
-        private void restore(GroupHierarchy edge) {// test ValidateNoCycle logic.
-                //user should confirm restore before restoring.
-
-                validationService.validateNoCycle(edge.getParentGroup(), edge.getChildGroup());
-
-                validationService.validateDepthLimit(edge.getParentGroup(), edge.getChildGroup());
-
-                edge.setStatus(Status.ACTIVE);
+                groupHierarchyRepository.save(edge);
         }
 
         public void disableRelationship(UUID parentGroupId, UUID childGroupId) {
 
-                GroupHierarchy edge = getRelationship(parentGroupId, childGroupId);
+                GroupHierarchy edge = getActiveRelationship(parentGroupId, childGroupId);
 
-                if(edge.getStatus() == Status.ACTIVE) {
-                        edge.setStatus(Status.DISABLED);
-                }
+                edge.setStatus(Status.DISABLED);
+                edge.setDisabledAt(Instant.now());
+                edge.setDeletedAt(null);
 
-                else {
-                        throw new IllegalArgumentException("Only active state can be diabled.");
-                }
+                groupHierarchyRepository.save(edge);
+
         }
 
-        public void deleteRelationship(UUID parentGroupId, UUID childGroupId) {
+// Manual deletion of a RolePermission assignment is not allowed. It must be disabled first, then a scheduled job will permanently delete it after a retention period.
 
-                GroupHierarchy edge = getRelationship(parentGroupId, childGroupId);
-                if(edge.getStatus() == Status.DISABLED) {
-                        edge.setStatus(Status.DELETED);
-                }
-                else if(edge.getStatus() == Status.ACTIVE) {
-                        System.out.println("Active relationship cannot be directly deleted, disabling relationship.");
-                        disableRelationship(parentGroupId, childGroupId);
-                }
-        }
 
         private Group getActiveGroup(UUID groupId) {
 
@@ -116,11 +103,13 @@ public class GroupHierarchyService {
                 return group;
         }
 
-        private GroupHierarchy getRelationship(UUID parentGroupId, UUID childGroupId) {
+        private GroupHierarchy getActiveRelationship(UUID parentGroupId, UUID childGroupId) {
 
                 Group parent = groupRepository.getReferenceById(parentGroupId);
                 Group child = groupRepository.getReferenceById(childGroupId);
 
-                return groupHierarchyRepository.findByParentGroupAndChildGroup(parent, child).orElseThrow(() -> new EntityNotFoundException("Relationship not found"));
+                return groupHierarchyRepository.findByParentGroupAndChildGroupAndStatus(parent, child, Status.ACTIVE)
+                                .orElseThrow(() -> new ActiveEntityNotFoundException(
+                                                "Active Group Hierarchy not found"));
         }
 }

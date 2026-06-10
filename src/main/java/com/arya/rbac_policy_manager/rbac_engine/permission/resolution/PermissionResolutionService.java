@@ -89,10 +89,6 @@ public class PermissionResolutionService {
             List<GroupPermission> gpAssignments = groupPermissionRepository.findByGroupAndStatus(group, Status.ACTIVE);
             permissions.addAll(gpAssignments.stream().map(GroupPermission::getPermission).collect(Collectors.toSet()));
         }
-        System.out.println(
-                permissions.stream()
-                        .map(Permission::getName)
-                        .toList());
         return permissions;
     }
 }
