@@ -22,9 +22,4 @@ public class Permission extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "action_id", nullable = false)
     private Action action;
-
-    @Column(nullable = false)
-    private String name;
-
-    private String description;
 }

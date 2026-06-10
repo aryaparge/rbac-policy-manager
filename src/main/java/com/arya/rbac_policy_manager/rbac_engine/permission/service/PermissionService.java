@@ -80,6 +80,18 @@ public class PermissionService {
 
         permission.setStatus(Status.DISABLED);
         permission.setDisabledAt(Instant.now());
+        permission.setDeletedAt(null); //ensure deletedAt is null.
+
+        permissionRepository.save(permission);
+    }
+
+    public void enablePermission(UUID permissionId) {
+        Permission permission = permissionRepository.findByIdAndStatus(permissionId, Status.DISABLED)
+                .orElseThrow(() -> new ActiveEntityNotFoundException("Disabled Permission", permissionId));
+
+        permission.setStatus(Status.ACTIVE);
+        permission.setDisabledAt(null);
+        permission.setDeletedAt(null);
 
         permissionRepository.save(permission);
     }

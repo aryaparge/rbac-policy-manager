@@ -79,7 +79,22 @@ public class ActionService {
 
         action.setStatus(Status.DISABLED);
         action.setDisabledAt(Instant.now());
+        action.setDeletedAt(null); //ensure deletedAt is null.
 
+        actionRepository.save(action);
+    }
+
+    public void enableAction(UUID actionId) {
+        Action action = actionRepository.findById(actionId)
+                .orElseThrow(() -> new EntityNotFoundException("Action not found"));
+
+        if (action.getStatus() == Status.ACTIVE) {
+            throw new InvalidEntityStateException("Action is already active.");
+        }
+
+        action.setStatus(Status.ACTIVE);
+        action.setDisabledAt(null);
+        action.setDeletedAt(null);
 
         actionRepository.save(action);
     }

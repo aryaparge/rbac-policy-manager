@@ -12,16 +12,10 @@ import lombok.Setter;
 @Setter
 @Table(name = "subject")
 public class Subject extends BaseEntity {
-
-    @Column(unique = true, nullable = false, updatable = false)
-    private String name;
-
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private SubjectType subjectType;
 
     @Column(nullable = false)
     private String displayName;
-
-    private String description;
 }

@@ -10,6 +10,8 @@ import com.arya.rbac_policy_manager.rbac_engine.resource.repo.ResourceRepository
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -27,6 +29,7 @@ public class ResourceService {
 
     public Resource createResource(
             String name,
+            String displayName,
             String description) {
         Optional<Resource> existing = resourceRepository.findByName(name);
 
@@ -38,6 +41,7 @@ public class ResourceService {
         Resource resource = new Resource();
 
         resource.setName(name);
+        resource.setDisplayName(displayName);
         resource.setDescription(description);
         resource.setStatus(Status.ACTIVE);
 
@@ -46,11 +50,11 @@ public class ResourceService {
 
     public Resource updateResource(
             UUID resourceId,
-            String name,
+            String displayName,
             String description) {
         Resource resource = getActiveResource(resourceId);
 
-        resource.setName(name);
+        resource.setDisplayName(displayName);
         resource.setDescription(description);
 
         return resourceRepository.save(resource);
@@ -70,9 +74,30 @@ public class ResourceService {
         Resource resource = getActiveResource(resourceId);
 
         resource.setStatus(Status.DISABLED);
+        resource.setDisabledAt(Instant.now());
+        resource.setDeletedAt(null); //ensure deletedAt is null.
 
         resourceRepository.save(resource);
     }
+
+    public void enableResource(UUID resourceId) {
+        Resource resource = resourceRepository.findById(resourceId)
+                .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
+
+        if(resource.getStatus() == Status.ACTIVE) {
+            throw new InvalidEntityStateException("Resource is already active.");
+        }
+
+        if(resource.getStatus() == Status.DELETED) {
+            throw new InvalidEntityStateException("Deleted resource cannot be enabled.");
+        }
+
+        resource.setStatus(Status.ACTIVE);
+        resource.setDisabledAt(null); //ensure disabledAt is null.
+        resource.setDeletedAt(null); //ensure deletedAt is null.
+
+        resourceRepository.save(resource);
+    }   
 
     public void deleteResource(UUID resourceId) {
         Resource resource = resourceRepository.findById(resourceId).orElseThrow(() -> new EntityNotFoundException("Resource not found"));

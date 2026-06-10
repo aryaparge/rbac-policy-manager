@@ -80,6 +80,26 @@ public class SubjectService {
 
         subject.setStatus(Status.DISABLED);
         subject.setDisabledAt(Instant.now());
+        subject.setDeletedAt(null);
+
+        subjectRepository.save(subject);
+    }
+
+    public void enableSubject(UUID subjectId) {
+        Subject subject = subjectRepository.findById(subjectId)
+                .orElseThrow(() -> new EntityNotFoundException("Subject not found"));
+
+        if (subject.getStatus() == Status.ACTIVE) {
+            throw new InvalidEntityStateException("Subject is already active.");
+        }
+
+        else if (subject.getStatus() == Status.DELETED) {
+            throw new InvalidEntityStateException("Deleted subject cannot be enabled. New subject can be created after retention period.");
+        }
+
+        subject.setStatus(Status.ACTIVE);
+        subject.setDisabledAt(null);
+        subject.setDeletedAt(null);
 
         subjectRepository.save(subject);
     }

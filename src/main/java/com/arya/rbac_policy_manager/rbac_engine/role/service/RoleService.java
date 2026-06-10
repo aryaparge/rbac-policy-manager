@@ -33,7 +33,7 @@ public class RoleService {
         Optional<Role> existing = roleRepository.findByName(name);
 
         if (existing.isPresent()) {
-            throw new DuplicateEntityException("Role", name, Status.ACTIVE);
+            throw new DuplicateEntityException("Role", name, existing.get().getStatus());
         }
 
         Role role = new Role();
@@ -72,6 +72,25 @@ public class RoleService {
 
         role.setStatus(Status.DISABLED);
         role.setDisabledAt(Instant.now());
+        role.setDeletedAt(null);
+
+        roleRepository.save(role);
+    }
+
+    public void enableRole(UUID roleId) {
+        Role role = roleRepository.findById(roleId)
+                .orElseThrow(() -> new EntityNotFoundException("Role not found"));     
+        
+        if (role.getStatus() == Status.ACTIVE) {
+            throw new InvalidEntityStateException("Role is already active."); 
+        }
+        if (role.getStatus() == Status.DELETED) {
+            throw new InvalidEntityStateException("Deleted role cannot be re-enabled.");
+        }   
+        
+        role.setStatus(Status.ACTIVE);
+        role.setDisabledAt(null);
+        role.setDeletedAt(null);    
 
         roleRepository.save(role);
     }
@@ -80,11 +99,11 @@ public class RoleService {
         Role role = roleRepository.findById(roleId).orElseThrow(() -> new EntityNotFoundException("Role not found"));
 
         if (role.getStatus() == Status.ACTIVE) {
-            throw new InvalidEntityStateException("Active resource cannot be deleted. Consider disabling instead.");
+            throw new InvalidEntityStateException("Active role cannot be deleted. Consider disabling instead.");
         }
 
         else if (role.getStatus() == Status.DELETED) {
-            throw new InvalidEntityStateException("Resource already deleted.");
+            throw new InvalidEntityStateException("Role already deleted.");
         }
 
         role.setStatus(Status.DELETED);

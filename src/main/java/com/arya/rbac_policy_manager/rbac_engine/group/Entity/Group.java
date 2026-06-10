@@ -10,10 +10,4 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "groups")//GROUP is a SQL reserved keyword. H2 hates the group table name.
-public class Group extends BaseEntity {
-
-    @Column(unique = true, nullable = false)
-    private String name;
-
-    private String description;
-}
+public class Group extends BaseEntity { }

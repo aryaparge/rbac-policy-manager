@@ -71,6 +71,26 @@ public class GroupService {
 
         group.setStatus(Status.DISABLED);
         group.setDisabledAt(Instant.now());
+        group.setDeletedAt(null); //ensure deletedAt is null.
+
+        groupRepository.save(group);
+    }
+
+    public void enableGroup(UUID groupId) {
+        Group group = groupRepository.findById(groupId)
+                .orElseThrow(() -> new EntityNotFoundException("Group not found"));
+
+        if (group.getStatus() == Status.ACTIVE) {
+            throw new InvalidEntityStateException("Group is already active.");
+        }
+
+        else if (group.getStatus() == Status.DELETED) {
+            throw new InvalidEntityStateException("Deleted group cannot be enabled.");
+        }
+
+        group.setStatus(Status.ACTIVE);
+        group.setDisabledAt(null); //ensure disabledAt is null.
+        group.setDeletedAt(null); //ensure deletedAt is null.
 
         groupRepository.save(group);
     }

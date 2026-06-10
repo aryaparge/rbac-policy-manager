@@ -34,7 +34,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-
 @SpringBootTest
 @Transactional
 @ActiveProfiles("test")
@@ -80,7 +79,7 @@ class AuthorizationFlowIT {
 
     @BeforeEach
     void setUp() {
-        documents = resourceService.createResource("documents", "Document store");
+        documents = resourceService.createResource("DOC_STORE", "document store", "Document store");
         read = actionService.createAction("READ", "Read access");
         write = actionService.createAction("WRITE", "Write access");
     }

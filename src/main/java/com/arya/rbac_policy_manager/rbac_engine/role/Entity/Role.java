@@ -10,10 +10,4 @@ import lombok.Setter;
 @Getter
 @Setter
 @Table(name = "role")
-public class Role extends BaseEntity {
-
-    @Column(unique = true, nullable = false)
-    private String name;
-
-    private String description;
-}
+public class Role extends BaseEntity { }
