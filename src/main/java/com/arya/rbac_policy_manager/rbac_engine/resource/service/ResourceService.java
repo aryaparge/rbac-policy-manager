@@ -30,8 +30,8 @@ public class ResourceService {
     private final PermissionRepository permissionRepository;
 
     public Resource getActiveResource(UUID resourceId) {
-        return resourceRepository.findByIdAndStatus( resourceId, Status.ACTIVE)
-                            .orElseThrow(() -> new ActiveEntityNotFoundException("Resource", resourceId));
+        return resourceRepository.findByIdAndStatus(resourceId, Status.ACTIVE)
+                .orElseThrow(() -> new ActiveEntityNotFoundException("Resource", resourceId));
     }
 
     public Resource createResource(
@@ -40,9 +40,8 @@ public class ResourceService {
             String description) {
         Optional<Resource> existing = resourceRepository.findByName(name);
 
-        if (existing.isPresent())
-        {
-            throw new DuplicateEntityException( "Resource", name, existing.get().getStatus());
+        if (existing.isPresent()) {
+            throw new DuplicateEntityException("Resource", name, existing.get().getStatus());
         }
 
         Resource resource = new Resource();
@@ -74,7 +73,7 @@ public class ResourceService {
 
     @Transactional(readOnly = true)
     public List<Resource> getAllResources() {
-        return resourceRepository.findByStatus( Status.ACTIVE);
+        return resourceRepository.findByStatus(Status.ACTIVE);
     }
 
     public void disableResource(UUID resourceId) {
@@ -84,32 +83,34 @@ public class ResourceService {
 
         resource.setStatus(Status.DISABLED);
         resource.setDisabledAt(now);
-        resource.setDeletedAt(null); //ensure deletedAt is null.
+        resource.setDeletedAt(null); // ensure deletedAt is null.
         resourceRepository.save(resource);
 
-        permissionRepository.cascadedMarkPermissionsAsDisabled(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabled(now);
-        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabled(now);
+        permissionRepository.cascadedMarkPermissionsAsDisabledByResource(now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(now);
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(now);
     }
 
     public void enableResource(UUID resourceId) {
-        // Enabling a resource does not automatically enable related entities. They must be manually enabled if needed.
+        // Enabling a resource does not automatically enable related entities. They must
+        // be manually enabled if needed.
         Resource resource = resourceRepository.findById(resourceId)
                 .orElseThrow(() -> new EntityNotFoundException("Resource not found"));
 
-        if(resource.getStatus() == Status.ACTIVE) {
+        if (resource.getStatus() == Status.ACTIVE) {
             throw new InvalidEntityStateException("Resource is already active.");
         }
 
-        if(resource.getStatus() == Status.DELETED) {
+        if (resource.getStatus() == Status.DELETED) {
             throw new InvalidEntityStateException("Deleted resource cannot be enabled.");
         }
 
         resource.setStatus(Status.ACTIVE);
-        resource.setDisabledAt(null); //ensure disabledAt is null.
-        resource.setDeletedAt(null); //ensure deletedAt is null.
+        resource.setDisabledAt(null); // ensure disabledAt is null.
+        resource.setDeletedAt(null); // ensure deletedAt is null.
 
         resourceRepository.save(resource);
-    }   
-    // Manual deletion of resources is not allowed. Disable the resource and let the scheduled cleanup handle the rest.
+    }
+    // Manual deletion of resources is not allowed. Disable the resource and let the
+    // scheduled cleanup handle the rest.
 }

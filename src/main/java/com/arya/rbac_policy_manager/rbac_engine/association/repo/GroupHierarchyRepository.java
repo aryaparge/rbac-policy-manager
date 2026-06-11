@@ -7,6 +7,7 @@ import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -24,40 +25,48 @@ public interface GroupHierarchyRepository extends JpaRepository<GroupHierarchy, 
         List<GroupHierarchy> findByChildGroupAndStatus(Group childGroup, Status status);
 
         Optional<GroupHierarchy> findByParentGroupAndChildGroup(Group parentGroup, Group childGroup);
-        
-        Optional<GroupHierarchy> findByParentGroupAndChildGroupAndStatus(Group parentGroup, Group childGroup, Status status);
+
+        Optional<GroupHierarchy> findByParentGroupAndChildGroupAndStatus(Group parentGroup, Group childGroup,
+                        Status status);
 
         @Modifying
         @Query("""
                         update GroupHierarchy gh
-                        set gh.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED,
+                        set gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                                 gh.disabledAt = :disabledAt,
-                                gh.deletedAt = null -- Clear deletedAt when marking as disabled
-                        where gh.status <> com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                        and (
-                                gh.parentGroup.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                                or gh.childGroup.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                        )
+                                gh.deletedAt = null
+                        where gh.parentGroup.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
                         """)
-        int cascadedMarkGroupHierarchiesAsDisabled(Instant disabledAt);
+        int cascadedMarkGroupHierarchiesAsDisabledByParent(@Param("disabledAt") Instant disabledAt);
+
+        @Modifying
+        @Query("""
+                        update GroupHierarchy gh
+                        set gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
+                                gh.disabledAt = :disabledAt,
+                                gh.deletedAt = null
+                        where gh.childGroup.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                        """)
+        int cascadedMarkGroupHierarchiesAsDisabledByChild(@Param("disabledAt") Instant disabledAt);
 
         @Modifying
         @Query("""
                             update GroupHierarchy gh
-                            set gh.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED,
+                            set gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
                                     gh.deletedAt = :deletedAt
-                            where gh.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                            where gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
                             and gh.disabledAt is not null
                             and gh.disabledAt <= :cutoff
                         """)
-        int markDisabledGroupHierarchiesAsDeleted(Instant cutoff, Instant deletedAt);
+        int markDisabledGroupHierarchiesAsDeleted(@Param("cutoff") Instant cutoff,
+                        @Param("deletedAt") Instant deletedAt);
 
         @Modifying
         @Query("""
                             delete from GroupHierarchy gh
-                            where gh.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED
+                            where gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED
                             and gh.deletedAt is not null
                             and gh.deletedAt <= :cutoff
                         """)
-        int hardDeleteExpiredGroupHierarchies(Instant cutoff);
+        int hardDeleteExpiredGroupHierarchies(@Param("cutoff") Instant cutoff);
 }

@@ -7,6 +7,7 @@ import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -32,34 +33,41 @@ public interface RoleHierarchyRepository extends JpaRepository<RoleHierarchy, UU
         @Modifying
         @Query("""
                         update RoleHierarchy rh
-                        set rh.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED,
+                        set rh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                                 rh.disabledAt = :disabledAt,
-                                rh.deletedAt = null -- Clear deletedAt when marking as disabled
-                        where rh.status <> com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                        and (
-                                rh.parentRole.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                                or rh.childRole.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                        )
+                                rh.deletedAt = null
+                        where rh.childRole.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
                         """)
-        int cascadedMarkRoleHierarchiesAsDisabled(Instant disabledAt);
+        int cascadedMarkRoleHierarchiesAsDisabledByChild(@Param("disabledAt") Instant disabledAt);
+
+        @Modifying
+        @Query("""
+                        update RoleHierarchy rh
+                        set rh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
+                                rh.disabledAt = :disabledAt,
+                                rh.deletedAt = null
+                        where rh.parentRole.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                        """)
+        int cascadedMarkRoleHierarchiesAsDisabledByParent(@Param("disabledAt") Instant disabledAt);
 
         @Modifying
         @Query("""
                             update RoleHierarchy rh
-                            set rh.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED,
+                            set rh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
                                 rh.deletedAt = :deletedAt
-                            where rh.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                            where rh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
                             and rh.disabledAt is not null
                             and rh.disabledAt <= :cutoff
                         """)
-        int markDisabledRoleHierarchiesAsDeleted(Instant cutoff, Instant deletedAt);
+        int markDisabledRoleHierarchiesAsDeleted(@Param("cutoff") Instant cutoff,
+                        @Param("deletedAt") Instant deletedAt);
 
         @Modifying
         @Query("""
                             delete from RoleHierarchy rh
-                            where rh.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED
+                            where rh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED
                             and rh.deletedAt is not null
                             and rh.deletedAt <= :cutoff
                         """)
-        int hardDeleteExpiredRoleHierarchies(Instant cutoff);
+        int hardDeleteExpiredRoleHierarchies(@Param("cutoff") Instant cutoff);
 }

@@ -8,6 +8,7 @@ import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -29,34 +30,40 @@ public interface RoleGroupRepository extends JpaRepository<RoleGroup, UUID> {
     @Modifying
     @Query("""
                 update RoleGroup rg
-                set rg.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED,
+                set rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     rg.disabledAt = :disabledAt,
-                    rg.deletedAt = null -- Clear deletedAt when marking as disabled
-                where rg.status <> com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                and (
-                        rg.role.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                     or rg.group.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                )
+                    rg.deletedAt = null
+                where rg.role.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
             """)
-    int cascadedMarkRoleGroupsAsDisabled(Instant disabledAt);
+    int cascadedMarkRoleGroupsAsDisabledByRole(@Param("disabledAt") Instant disabledAt);
 
     @Modifying
     @Query("""
                 update RoleGroup rg
-                set rg.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED,
+                set rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
+                    rg.disabledAt = :disabledAt,
+                    rg.deletedAt = null
+                where rg.group.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+            """)
+    int cascadedMarkRoleGroupsAsDisabledByGroup(@Param("disabledAt") Instant disabledAt);
+
+    @Modifying
+    @Query("""
+                update RoleGroup rg
+                set rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
                     rg.deletedAt = :deletedAt
-                where rg.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                where rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
                 and rg.disabledAt is not null
                 and rg.disabledAt <= :cutoff
             """)
-    int markDisabledRoleGroupsAsDeleted(Instant cutoff, Instant deletedAt);
+    int markDisabledRoleGroupsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
     @Modifying
     @Query("""
                 delete from RoleGroup rg
-                where rg.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED
+                where rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED
                 and rg.deletedAt is not null
                 and rg.deletedAt <= :cutoff
             """)
-    int hardDeleteExpiredRoleGroups(Instant cutoff);
+    int hardDeleteExpiredRoleGroups(@Param("cutoff") Instant cutoff);
 }

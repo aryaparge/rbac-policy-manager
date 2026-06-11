@@ -8,6 +8,7 @@ import com.arya.rbac_policy_manager.rbac_engine.subject.entity.Subject;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -29,34 +30,40 @@ public interface SubjectRoleRepository extends JpaRepository<SubjectRole, UUID> 
     @Modifying
     @Query("""
                 update SubjectRole sr
-                set sr.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED,
+                set sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     sr.disabledAt = :disabledAt,
-                    sr.deletedAt = null -- Clear deletedAt when marking as disabled
-                where sr.status <> com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                and (
-                        sr.subject.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
-                     or sr.role.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
-                )
+                    sr.deletedAt = null
+                where sr.subject.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
             """)
-    int cascadedMarkSubjectRolesAsDisabled(Instant disabledAt);
+    int cascadedMarkSubjectRolesAsDisabledBySubject(@Param("disabledAt") Instant disabledAt);
+
+    @Modifying
+    @Query("""
+                        update SubjectRole sr
+                        set sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
+                            sr.disabledAt = :disabledAt,
+                            sr.deletedAt = null
+                        where sr.role.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+            """)
+    int cascadedMarkSubjectRolesAsDisabledByRole(@Param("disabledAt") Instant disabledAt);
 
     @Modifying
     @Query("""
                 update SubjectRole sr
-                set sr.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED,
+                set sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
                     sr.deletedAt = :deletedAt
-                where sr.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                where sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
                 and sr.disabledAt is not null
                 and sr.disabledAt <= :cutoff
             """)
-    int markDisabledSubjectRolesAsDeleted(Instant cutoff, Instant deletedAt);  
+    int markDisabledSubjectRolesAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
     @Modifying
     @Query("""
                 delete from SubjectRole sr
-                where sr.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED
+                where sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED
                 and sr.deletedAt is not null
                 and sr.deletedAt <= :cutoff
             """)
-    int hardDeleteExpiredSubjectRoles(Instant cutoff);
+    int hardDeleteExpiredSubjectRoles(@Param("cutoff") Instant cutoff);
 }

@@ -8,6 +8,7 @@ import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -24,7 +25,7 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
 
     List<GroupPermission> findByPermission(Permission permission);
 
-    Optional<GroupPermission> findByGroupAndPermission( Group group, Permission permission);
+    Optional<GroupPermission> findByGroupAndPermission(Group group, Permission permission);
 
     List<GroupPermission> findByStatus(Status status);
 
@@ -33,34 +34,40 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
     @Modifying
     @Query("""
                 update GroupPermission gp
-                set gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED,
-                    gp.disabledAt = :disabledAt
-                    gp.deletedAt = null -- Clear deletedAt when marking as disabled
-                where gp.status <> com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                and (
-                        gp.group.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                     or gp.permission.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
-                )
+                set gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
+                    gp.disabledAt = :disabledAt,
+                    gp.deletedAt = null
+                where gp.group.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
             """)
-    int cascadedMarkGroupPermissionsAsDisabled(Instant disabledAt);
+    int cascadedMarkGroupPermissionsAsDisabledByGroup(@Param("disabledAt") Instant disabledAt);
 
-    @Modifying 
+    @Modifying
     @Query("""
                 update GroupPermission gp
-                set gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED,
+                set gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
+                    gp.disabledAt = :disabledAt,
+                    gp.deletedAt = null
+                where gp.permission.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+            """)
+    int cascadedMarkGroupPermissionsAsDisabledByPermission(@Param("disabledAt") Instant disabledAt);
+
+    @Modifying
+    @Query("""
+                update GroupPermission gp
+                set gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
                     gp.deletedAt = :deletedAt
-                where gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DISABLED
+                where gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
                 and gp.disabledAt is not null
                 and gp.disabledAt <= :cutoff
             """)
-    int markDisabledGroupPermissionsAsDeleted(Instant cutoff, Instant deletedAt);
+    int markDisabledGroupPermissionsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
     @Modifying
     @Query("""
                 delete from GroupPermission gp
-                where gp.status = com.arya.rbac_policy_manager.common.Enums.Status.DELETED
+                where gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED
                 and gp.deletedAt is not null
                 and gp.deletedAt <= :cutoff
             """)
-    int hardDeleteExpiredGroupPermissions(Instant cutoff);
+    int hardDeleteExpiredGroupPermissions(@Param("cutoff") Instant cutoff);
 }

@@ -90,9 +90,9 @@ public class ActionService {
         action.setDeletedAt(null); // ensure deletedAt is null.
         actionRepository.save(action);
 
-        permissionRepository.cascadedMarkPermissionsAsDisabled(now);
-        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabled(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabled(now);
+        permissionRepository.cascadedMarkPermissionsAsDisabledByAction(now);
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(now);
     }
 
     public void enableAction(UUID actionId) {

@@ -88,8 +88,8 @@ public class PermissionService {
         permission.setDeletedAt(null); // ensure deletedAt is null.
         permissionRepository.save(permission);
 
-        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabled(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabled(now);
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(now);
     }
 
     public void enablePermission(UUID permissionId) {

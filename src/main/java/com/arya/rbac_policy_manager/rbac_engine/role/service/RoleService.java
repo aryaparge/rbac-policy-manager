@@ -87,10 +87,11 @@ public class RoleService {
         role.setDeletedAt(null); // Clear deletedAt.
         roleRepository.save(role);
 
-        subjectRoleRepository.cascadedMarkSubjectRolesAsDisabled(now);
-        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabled(now);
-        roleGroupRepository.cascadedMarkRoleGroupsAsDisabled(now);
-        roleHierarchyRepository.cascadedMarkRoleHierarchiesAsDisabled(now);
+        subjectRoleRepository.cascadedMarkSubjectRolesAsDisabledByRole(now);
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByRole(now);
+        roleGroupRepository.cascadedMarkRoleGroupsAsDisabledByRole(now);
+        roleHierarchyRepository.cascadedMarkRoleHierarchiesAsDisabledByChild(now);
+        roleHierarchyRepository.cascadedMarkRoleHierarchiesAsDisabledByParent(now);
     }
 
     public void enableRole(UUID roleId) {

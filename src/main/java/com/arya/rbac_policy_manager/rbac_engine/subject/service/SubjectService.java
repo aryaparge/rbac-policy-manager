@@ -88,7 +88,7 @@ public class SubjectService {
         subject.setDeletedAt(null);
         subjectRepository.save(subject);
 
-        subjectRoleRepository.cascadedMarkSubjectRolesAsDisabled(now);
+        subjectRoleRepository.cascadedMarkSubjectRolesAsDisabledBySubject(now);
     }
 
     public void enableSubject(UUID subjectId) {

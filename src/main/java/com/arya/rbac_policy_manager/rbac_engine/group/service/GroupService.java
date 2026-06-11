@@ -1,5 +1,6 @@
 package com.arya.rbac_policy_manager.rbac_engine.group.service;
 
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupHierarchyRepository;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleGroupRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
@@ -26,6 +27,7 @@ public class GroupService {
 
     private final GroupPermissionRepository groupPermissionRepository;
     private final RoleGroupRepository roleGroupRepository;
+    private final GroupHierarchyRepository groupHierarchyRepository;
 
     public Group getActiveGroup(UUID groupId) {
         return groupRepository.findByIdAndStatus(
@@ -81,8 +83,10 @@ public class GroupService {
         group.setDeletedAt(null); // ensure deletedAt is null.
         groupRepository.save(group);
 
-        roleGroupRepository.cascadedMarkRoleGroupsAsDisabled(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabled(now);
+        roleGroupRepository.cascadedMarkRoleGroupsAsDisabledByGroup(now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByGroup(now);
+        groupHierarchyRepository.cascadedMarkGroupHierarchiesAsDisabledByChild(now);
+        groupHierarchyRepository.cascadedMarkGroupHierarchiesAsDisabledByParent(now);
     }
 
     public void enableGroup(UUID groupId) {

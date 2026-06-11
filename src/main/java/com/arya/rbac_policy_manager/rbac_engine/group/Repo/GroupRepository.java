@@ -8,6 +8,7 @@ import java.util.UUID;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
@@ -30,7 +31,7 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
                 and g.disabledAt is not null
                 and g.disabledAt <= :cutoff
             """)
-    int markDisabledGroupsAsDeleted(Instant cutoff, Instant deletedAt);
+    int markDisabledGroupsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
     @Modifying
     @Query("""
@@ -39,5 +40,5 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
                 and g.deletedAt is not null
                 and g.deletedAt <= :cutoff
             """)
-    int hardDeleteExpiredGroups(Instant cutoff);
+    int hardDeleteExpiredGroups(@Param("cutoff") Instant cutoff);
 }
