@@ -22,7 +22,7 @@ public interface ActionRepository extends JpaRepository<Action, UUID> {
 
     List<Action> findByStatus(Status status);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update Action a
                 set a.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -33,7 +33,7 @@ public interface ActionRepository extends JpaRepository<Action, UUID> {
             """)
     int markDisabledActionsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from Action a
                 where a.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

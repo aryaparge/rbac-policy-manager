@@ -83,10 +83,10 @@ public class GroupService {
         group.setDeletedAt(null); // ensure deletedAt is null.
         groupRepository.save(group);
 
-        roleGroupRepository.cascadedMarkRoleGroupsAsDisabledByGroup(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByGroup(now);
-        groupHierarchyRepository.cascadedMarkGroupHierarchiesAsDisabledByChild(now);
-        groupHierarchyRepository.cascadedMarkGroupHierarchiesAsDisabledByParent(now);
+        roleGroupRepository.cascadedMarkRoleGroupsAsDisabledByGroup(groupId, now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByGroup(groupId, now);
+        groupHierarchyRepository.cascadedMarkGroupHierarchiesAsDisabledByChild(groupId, now);
+        groupHierarchyRepository.cascadedMarkGroupHierarchiesAsDisabledByParent(groupId, now);
     }
 
     public void enableGroup(UUID groupId) {

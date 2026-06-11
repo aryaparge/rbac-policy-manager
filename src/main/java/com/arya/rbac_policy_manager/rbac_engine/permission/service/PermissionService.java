@@ -88,12 +88,35 @@ public class PermissionService {
         permission.setDeletedAt(null); // ensure deletedAt is null.
         permissionRepository.save(permission);
 
-        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(now);
+        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(permissionId, now);
+        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(permissionId, now);
+    }
+
+    public void cascadingDisablePermissionByAction(Action action, Instant now) {
+        List<Permission> permissions = permissionRepository.findByActionAndStatus(action, Status.ACTIVE);
+
+        permissionRepository.cascadedMarkPermissionsAsDisabledByAction(action.getId(), now);
+
+        for (Permission permission : permissions) {
+            groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(permission.getId(), now);
+            rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(permission.getId(), now);
+        }
+    }
+
+    public void cascadingDisablePermissionByResource(Resource resource, Instant now) {
+        List<Permission> permissions = permissionRepository.findByResourceAndStatus(resource, Status.ACTIVE);
+
+        permissionRepository.cascadedMarkPermissionsAsDisabledByResource(resource.getId(), now);
+
+        for (Permission permission : permissions) {
+            groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(permission.getId(), now);
+            rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(permission.getId(),now);
+        }
     }
 
     public void enablePermission(UUID permissionId) {
-        // Enabling a permission does not automatically enable related entities. They must be manually enabled if needed.
+        // Enabling a permission does not automatically enable related entities. They
+        // must be manually enabled if needed.
         Permission permission = permissionRepository.findByIdAndStatus(permissionId, Status.DISABLED)
                 .orElseThrow(() -> new ActiveEntityNotFoundException("Disabled Permission", permissionId));
 

@@ -60,6 +60,7 @@ public class RolePermissionService {
 
         assignment.setRole(role);
         assignment.setPermission(permission);
+        assignment.setName(permission.getName() + "->" + role.getName());
         assignment.setStatus(Status.ACTIVE);
 
         return rolePermissionRepository.save(assignment);

@@ -50,6 +50,7 @@ public class RoleHierarchyService {
 
                 edge.setParentRole(parent);
                 edge.setChildRole(child);
+                edge.setName(child.getName() + "->" +parent.getName());
                 edge.setStatus(Status.ACTIVE);
 
                 roleHierarchyRepository.save(edge);

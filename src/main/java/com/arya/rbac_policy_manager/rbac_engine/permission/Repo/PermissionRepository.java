@@ -30,27 +30,31 @@ public interface PermissionRepository extends JpaRepository<Permission, UUID> {
 
     List<Permission> findByStatus(Status status);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    // because bulk JPQL updates bypass the persistence context
     @Query("""
                 update Permission p
                 set p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     p.disabledAt = :disabledAt,
                     p.deletedAt = null
-                where p.action.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where p.action.id = :actionId
             """)
-    int cascadedMarkPermissionsAsDisabledByAction(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkPermissionsAsDisabledByAction(@Param("actionId") UUID actionId,
+            @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update Permission p
                 set p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     p.disabledAt = :disabledAt,
                     p.deletedAt = null
-                where p.resource.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where p.resource.id = :resourceId
             """)
-    int cascadedMarkPermissionsAsDisabledByResource(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkPermissionsAsDisabledByResource(@Param("resourceId") UUID resourceId,
+            @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    // because bulk JPQL updates bypass the persistence context
     @Query("""
                 update Permission p
                 set p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -61,7 +65,7 @@ public interface PermissionRepository extends JpaRepository<Permission, UUID> {
             """)
     int markDisabledPermissionsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from Permission p
                 where p.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

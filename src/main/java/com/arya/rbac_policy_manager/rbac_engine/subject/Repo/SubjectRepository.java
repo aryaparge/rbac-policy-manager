@@ -24,7 +24,7 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
 
     List<Subject> findByStatus(Status status);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update Subject s
                 set s.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -35,7 +35,7 @@ public interface SubjectRepository extends JpaRepository<Subject, UUID> {
             """)
     int markDisabledSubjectsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from Subject s
                 where s.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

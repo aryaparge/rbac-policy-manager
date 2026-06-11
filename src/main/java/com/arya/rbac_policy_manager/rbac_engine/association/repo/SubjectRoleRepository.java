@@ -27,27 +27,28 @@ public interface SubjectRoleRepository extends JpaRepository<SubjectRole, UUID> 
 
     boolean existsBySubjectAndRole(Subject subject, Role role);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update SubjectRole sr
                 set sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     sr.disabledAt = :disabledAt,
                     sr.deletedAt = null
-                where sr.subject.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where sr.subject.id = :subjectId
             """)
-    int cascadedMarkSubjectRolesAsDisabledBySubject(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkSubjectRolesAsDisabledBySubject(@Param("subjectId") UUID subjectId,
+            @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                         update SubjectRole sr
                         set sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                             sr.disabledAt = :disabledAt,
                             sr.deletedAt = null
-                        where sr.role.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                        where sr.role.id = :roleId
             """)
-    int cascadedMarkSubjectRolesAsDisabledByRole(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkSubjectRolesAsDisabledByRole(@Param("roleId") UUID roleId, @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update SubjectRole sr
                 set sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -58,7 +59,7 @@ public interface SubjectRoleRepository extends JpaRepository<SubjectRole, UUID> 
             """)
     int markDisabledSubjectRolesAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from SubjectRole sr
                 where sr.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

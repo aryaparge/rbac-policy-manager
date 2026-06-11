@@ -22,18 +22,18 @@ public interface GroupRepository extends JpaRepository<Group, UUID> {
 
     List<Group> findByStatus(Status status);
 
-    @Modifying
-    @Query("""
-                update Group g
-                set g.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
-                    g.deletedAt = :deletedAt
-                where g.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
-                and g.disabledAt is not null
-                and g.disabledAt <= :cutoff
-            """)
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
+    @Query(value = """
+                update group
+                set status = 'DELETED',
+                    deleted_at = :deletedAt
+                where status = 'DISABLED'
+                and disabled_at is not null
+                and disabled_at <= :cutoff
+            """, nativeQuery = true)
     int markDisabledGroupsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from Group g
                 where g.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

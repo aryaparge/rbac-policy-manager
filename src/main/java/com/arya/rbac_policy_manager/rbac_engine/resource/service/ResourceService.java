@@ -1,13 +1,11 @@
 package com.arya.rbac_policy_manager.rbac_engine.resource.service;
 
-import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
-import com.arya.rbac_policy_manager.rbac_engine.association.repo.RolePermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
-import com.arya.rbac_policy_manager.rbac_engine.permission.repo.PermissionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.permission.service.PermissionService;
 import com.arya.rbac_policy_manager.rbac_engine.resource.entity.Resource;
 import com.arya.rbac_policy_manager.rbac_engine.resource.repo.ResourceRepository;
 import lombok.RequiredArgsConstructor;
@@ -25,9 +23,7 @@ import java.util.UUID;
 public class ResourceService {
     private final ResourceRepository resourceRepository;
 
-    private final RolePermissionRepository rolePermissionRepository;
-    private final GroupPermissionRepository groupPermissionRepository;
-    private final PermissionRepository permissionRepository;
+    private final PermissionService permissionService;
 
     public Resource getActiveResource(UUID resourceId) {
         return resourceRepository.findByIdAndStatus(resourceId, Status.ACTIVE)
@@ -86,9 +82,7 @@ public class ResourceService {
         resource.setDeletedAt(null); // ensure deletedAt is null.
         resourceRepository.save(resource);
 
-        permissionRepository.cascadedMarkPermissionsAsDisabledByResource(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(now);
-        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(now);
+        permissionService.cascadingDisablePermissionByResource(resource, now);
     }
 
     public void enableResource(UUID resourceId) {

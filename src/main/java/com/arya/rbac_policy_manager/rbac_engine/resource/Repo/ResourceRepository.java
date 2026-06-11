@@ -22,7 +22,7 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
 
     List<Resource> findByStatus(Status status);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update Resource r
                 set r.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -33,7 +33,7 @@ public interface ResourceRepository extends JpaRepository<Resource, UUID> {
             """)
     int markDisabledResourcesAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from Resource r
                 where r.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

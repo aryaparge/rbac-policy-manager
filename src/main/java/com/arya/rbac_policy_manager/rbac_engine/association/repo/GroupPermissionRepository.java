@@ -23,7 +23,7 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
 
     List<GroupPermission> findByGroupAndStatus(Group group, Status status);
 
-    List<GroupPermission> findByPermission(Permission permission);
+    List<GroupPermission> findAllByPermission(Permission permission);
 
     Optional<GroupPermission> findByGroupAndPermission(Group group, Permission permission);
 
@@ -31,27 +31,27 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
 
     boolean existsByGroupAndPermission(Group group, Permission permission);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update GroupPermission gp
                 set gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     gp.disabledAt = :disabledAt,
                     gp.deletedAt = null
-                where gp.group.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where gp.group.id = :groupId
             """)
-    int cascadedMarkGroupPermissionsAsDisabledByGroup(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkGroupPermissionsAsDisabledByGroup(@Param("groupId") UUID groupId, @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update GroupPermission gp
                 set gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     gp.disabledAt = :disabledAt,
                     gp.deletedAt = null
-                where gp.permission.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where gp.permission.id = :permissionId
             """)
-    int cascadedMarkGroupPermissionsAsDisabledByPermission(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkGroupPermissionsAsDisabledByPermission(@Param("permissionId") UUID permissionId, @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update GroupPermission gp
                 set gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -62,7 +62,7 @@ public interface GroupPermissionRepository extends JpaRepository<GroupPermission
             """)
     int markDisabledGroupPermissionsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from GroupPermission gp
                 where gp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

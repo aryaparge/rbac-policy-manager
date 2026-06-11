@@ -22,7 +22,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
 
     List<Role> findByStatus(Status status);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update Role r
                 set r.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -34,7 +34,7 @@ public interface RoleRepository extends JpaRepository<Role, UUID> {
 
     int markDisabledRolesAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from Role r
                 where r.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

@@ -29,27 +29,28 @@ public interface GroupHierarchyRepository extends JpaRepository<GroupHierarchy, 
         Optional<GroupHierarchy> findByParentGroupAndChildGroupAndStatus(Group parentGroup, Group childGroup,
                         Status status);
 
-        @Modifying
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
         @Query("""
                         update GroupHierarchy gh
                         set gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                                 gh.disabledAt = :disabledAt,
                                 gh.deletedAt = null
-                        where gh.parentGroup.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                        where gh.parentGroup.id = :parentId 
                         """)
-        int cascadedMarkGroupHierarchiesAsDisabledByParent(@Param("disabledAt") Instant disabledAt);
+                        //identity is stable, status is derived and timing-sensitive.
+        int cascadedMarkGroupHierarchiesAsDisabledByParent(@Param("parentId") UUID parentId, @Param("disabledAt") Instant disabledAt);
 
-        @Modifying
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
         @Query("""
                         update GroupHierarchy gh
                         set gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                                 gh.disabledAt = :disabledAt,
                                 gh.deletedAt = null
-                        where gh.childGroup.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                        where gh.childGroup.id = :childId
                         """)
-        int cascadedMarkGroupHierarchiesAsDisabledByChild(@Param("disabledAt") Instant disabledAt);
+        int cascadedMarkGroupHierarchiesAsDisabledByChild(@Param("childId") UUID childId, @Param("disabledAt") Instant disabledAt);
 
-        @Modifying
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
         @Query("""
                             update GroupHierarchy gh
                             set gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -58,10 +59,9 @@ public interface GroupHierarchyRepository extends JpaRepository<GroupHierarchy, 
                             and gh.disabledAt is not null
                             and gh.disabledAt <= :cutoff
                         """)
-        int markDisabledGroupHierarchiesAsDeleted(@Param("cutoff") Instant cutoff,
-                        @Param("deletedAt") Instant deletedAt);
+        int markDisabledGroupHierarchiesAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-        @Modifying
+        @Modifying(flushAutomatically = true, clearAutomatically = true)
         @Query("""
                             delete from GroupHierarchy gh
                             where gh.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

@@ -5,12 +5,9 @@ import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNot
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
-import com.arya.rbac_policy_manager.rbac_engine.permission.repo.PermissionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.permission.service.PermissionService;
 import com.arya.rbac_policy_manager.rbac_engine.action.entity.Action;
 import com.arya.rbac_policy_manager.rbac_engine.action.repo.ActionRepository;
-import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
-import com.arya.rbac_policy_manager.rbac_engine.association.repo.RolePermissionRepository;
-
 import lombok.RequiredArgsConstructor;
 
 import org.springframework.stereotype.Service;
@@ -28,9 +25,7 @@ import java.util.UUID;
 public class ActionService {
     private final ActionRepository actionRepository;
 
-    private final PermissionRepository permissionRepository;
-    private final RolePermissionRepository rolePermissionRepository;
-    private final GroupPermissionRepository groupPermissionRepository;
+    private final PermissionService permissionService;
 
     public Action getActiveAction(UUID actionId) {
         return actionRepository.findByIdAndStatus(
@@ -90,9 +85,7 @@ public class ActionService {
         action.setDeletedAt(null); // ensure deletedAt is null.
         actionRepository.save(action);
 
-        permissionRepository.cascadedMarkPermissionsAsDisabledByAction(now);
-        rolePermissionRepository.cascadedMarkRolePermissionsAsDisabledByPermission(now);
-        groupPermissionRepository.cascadedMarkGroupPermissionsAsDisabledByPermission(now);
+        permissionService.cascadingDisablePermissionByAction(action, now);
     }
 
     public void enableAction(UUID actionId) {

@@ -27,27 +27,27 @@ public interface RoleGroupRepository extends JpaRepository<RoleGroup, UUID> {
 
     boolean existsByRoleAndGroup(Role role, Group group);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update RoleGroup rg
                 set rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     rg.disabledAt = :disabledAt,
                     rg.deletedAt = null
-                where rg.role.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where rg.role.id = :roleId
             """)
-    int cascadedMarkRoleGroupsAsDisabledByRole(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkRoleGroupsAsDisabledByRole(@Param("roleId") UUID roleId, @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update RoleGroup rg
                 set rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     rg.disabledAt = :disabledAt,
                     rg.deletedAt = null
-                where rg.group.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where rg.group.id = :groupId
             """)
-    int cascadedMarkRoleGroupsAsDisabledByGroup(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkRoleGroupsAsDisabledByGroup(@Param("groupIdId") UUID groupId, @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update RoleGroup rg
                 set rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -58,7 +58,7 @@ public interface RoleGroupRepository extends JpaRepository<RoleGroup, UUID> {
             """)
     int markDisabledRoleGroupsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from RoleGroup rg
                 where rg.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

@@ -57,6 +57,7 @@ public class GroupPermissionService {
 
         assignment.setGroup(group);
         assignment.setPermission(permission);
+        assignment.setName(permission.getName() + "->" + group.getName());
         assignment.setStatus(Status.ACTIVE);
 
         return groupPermissionRepository.save(assignment);

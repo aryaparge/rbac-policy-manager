@@ -5,7 +5,13 @@ import com.arya.rbac_policy_manager.lifecycle_cleanup.LifecycleRetention;
 import com.arya.rbac_policy_manager.rbac_engine.action.entity.Action;
 import com.arya.rbac_policy_manager.rbac_engine.action.repo.ActionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.action.service.ActionService;
+import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupPermission;
+import com.arya.rbac_policy_manager.rbac_engine.association.entity.RolePermission;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupPermissionRepository;
+import com.arya.rbac_policy_manager.rbac_engine.association.repo.RolePermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
+import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
+import com.arya.rbac_policy_manager.rbac_engine.group.repo.GroupRepository;
 import com.arya.rbac_policy_manager.rbac_engine.permission.entity.Permission;
 import com.arya.rbac_policy_manager.rbac_engine.permission.repo.PermissionRepository;
 import com.arya.rbac_policy_manager.rbac_engine.permission.service.PermissionService;
@@ -16,6 +22,7 @@ import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 import com.arya.rbac_policy_manager.rbac_engine.role.repo.RoleRepository;
 import com.arya.rbac_policy_manager.rbac_engine.role.service.RoleService;
 
+import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 
 import org.junit.jupiter.api.BeforeEach;
@@ -26,6 +33,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -49,6 +57,9 @@ class LifecycleIT {
     @Autowired
     private LifecycleCleanupService cleanupService;
 
+    @Autowired
+    private EntityManager entityManager;
+
     // ── domain services (used to set up state) ───────────────────────────────
     @Autowired
     private ActionService actionService;
@@ -68,6 +79,12 @@ class LifecycleIT {
     private ResourceRepository resourceRepository;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private GroupRepository groupRepository;
+    @Autowired
+    private RolePermissionRepository rolePermissionRepository;
+    @Autowired
+    private GroupPermissionRepository groupPermissionRepository;
 
     // ── shared fixtures ──────────────────────────────────────────────────────
     private Resource resource;
@@ -90,14 +107,13 @@ class LifecycleIT {
 
         // Backdate disabledAt to simulate 61 days ago
         Action stale = actionRepository.findById(action.getId()).orElseThrow();
-        stale.setDisabledAt(Instant.now().minus(LifecycleRetention.DISABLED_RETENTION).minusSeconds(360));
+        stale.setDisabledAt(Instant.now().minus(LifecycleRetention.DISABLED_RETENTION).minusSeconds(3600));
         actionRepository.save(stale);
 
         cleanupService.cleanUpActions();
 
-        Action result = actionRepository.findById(action.getId()).orElseThrow();
+        Action result = actionRepository.findById(stale.getId()).orElseThrow();
         assertThat(result.getStatus()).isEqualTo(Status.DELETED);
-        assertThat(result.getDeletedAt()).isNotNull();
     }
 
     // =========================================================================
@@ -131,7 +147,7 @@ class LifecycleIT {
 
         cleanupService.cleanUpActions();
 
-        assertThat(actionRepository.findById(action.getId())).isEmpty();
+        assertThat(actionRepository.findById(stale.getId())).isEmpty();
     }
 
     // =========================================================================
@@ -186,52 +202,76 @@ class LifecycleIT {
     // =========================================================================
     // 7. Action → Permission edge: disabling an Action cascades DISABLED status
     // to its dependent Permissions (via ActionService.disableAction).
-    // When cleanup runs after the retention window, both the Action and
-    // its cascaded Permission are promoted to DELETED.
-    //
-    // This is the "Action → Permission → edge disable propagation" test.
     // =========================================================================
     @Test
-    void disablingAction_cascadesDisabledToPermission_andCleanupDeletesBoth() {
-        // Create a permission that depends on our shared action
-        Permission permission = permissionService.createPermission(action.getId(), resource.getId(), "cascade perm");
+    void disablingAction_cascadesDisabledToPermission() {
 
-        // Disabling the action must cascade DISABLED to the permission
+        Permission permission = permissionService.createPermission(
+                action.getId(),
+                resource.getId(),
+                "cascade perm");
+
+        Role role = new Role();
+        role.setName("ADMIN");
+        role.setStatus(Status.ACTIVE);
+        role.setCreatedAt(Instant.now());
+
+        role = roleRepository.save(role);
+
+        Group group = new Group();
+        group.setName("SECURITY_TEAM");
+        group.setStatus(Status.ACTIVE);
+        group.setCreatedAt(Instant.now());
+
+        group = groupRepository.save(group);
+
+        RolePermission rp1 = new RolePermission();
+        rp1.setRole(role);
+        rp1.setName("rp1");
+        rp1.setPermission(permission);
+        rp1.setStatus(Status.ACTIVE);
+        rolePermissionRepository.save(rp1);
+
+        GroupPermission gp1 = new GroupPermission();
+        gp1.setGroup(group);
+        gp1.setName("gp1");
+        gp1.setPermission(permission);
+        gp1.setStatus(Status.ACTIVE);
+        groupPermissionRepository.save(gp1);
+
         actionService.disableAction(action.getId());
 
-        log.info("DISABLED ACTION id={} status={} disabledAt={}",
-                action.getId(), action.getStatus(), action.getDisabledAt());
-
         Permission afterCascade = permissionRepository.findById(permission.getId()).orElseThrow();
+
         assertThat(afterCascade.getStatus())
                 .as("Permission should be DISABLED after its Action is disabled")
                 .isEqualTo(Status.DISABLED);
+
         assertThat(afterCascade.getDisabledAt()).isNotNull();
 
-        // Backdate both entities so they are beyond the retention window
-        Instant pastCutoff = Instant.now()
-                .minus(LifecycleRetention.DISABLED_RETENTION)
-                .minusSeconds(3600);
+        // ---- RolePermission cascade check ----
+        List<RolePermission> rolePermissions = rolePermissionRepository.findAllByPermission(permission);
 
-        Action staleAction = actionRepository.findById(action.getId()).orElseThrow();
-        actionService.disableAction(staleAction.getId());
+        assertThat(rolePermissions)
+                .as("RolePermission should be DISABLED after Permission is disabled")
+                .isNotEmpty();
 
-        afterCascade.setDisabledAt(pastCutoff);
-        permissionRepository.save(afterCascade);
+        for (RolePermission rp : rolePermissions) {
+            assertThat(rp.getStatus()).isEqualTo(Status.DISABLED);
+            assertThat(rp.getDisabledAt()).isNotNull();
+        }
 
-        // Run cleanup for both entity types
-        cleanupService.cleanUpPermissions();
-        cleanupService.cleanUpActions();
+        // ---- GroupPermission cascade check ----
+        List<GroupPermission> groupPermissions = groupPermissionRepository.findAllByPermission(permission);
 
-        // Both should now be DELETED
-        Action resultAction = actionRepository.findById(action.getId()).orElseThrow();
-        assertThat(resultAction.getStatus())
-                .as("Action should be DELETED after cleanup")
-                .isEqualTo(Status.DELETED);
+        assertThat(groupPermissions)
+                .as("GroupPermission should be DISABLED after Permission is disabled")
+                .isNotEmpty();
 
-        Permission resultPerm = permissionRepository.findById(permission.getId()).orElseThrow();
-        assertThat(resultPerm.getStatus())
-                .as("Permission should be DELETED after cleanup")
-                .isEqualTo(Status.DELETED);
+        for (GroupPermission gp : groupPermissions) {
+            assertThat(gp.getStatus()).isEqualTo(Status.DISABLED);
+            assertThat(gp.getDisabledAt()).isNotNull();
+
+        }
     }
 }

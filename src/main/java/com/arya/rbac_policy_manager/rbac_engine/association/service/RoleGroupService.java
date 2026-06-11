@@ -60,6 +60,7 @@ public class RoleGroupService {
 
         assignment.setRole(role);
         assignment.setGroup(group);
+        assignment.setName(role.getName() + "->" + group.getName());
         assignment.setStatus(Status.ACTIVE);
 
         return roleGroupRepository.save(assignment);

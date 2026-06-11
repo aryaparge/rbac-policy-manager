@@ -48,6 +48,7 @@ public class GroupHierarchyService {
 
                 edge.setParentGroup(parent);
                 edge.setChildGroup(child);
+                edge.setName(child.getName() + "->" +parent.getName());
                 edge.setStatus(Status.ACTIVE);
                 edge.setDeletedAt(null);
                 edge.setDisabledAt(null);

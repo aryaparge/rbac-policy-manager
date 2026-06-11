@@ -22,33 +22,35 @@ public interface RolePermissionRepository extends JpaRepository<RolePermission, 
 
     List<RolePermission> findByRole(Role role);
 
+    List<RolePermission> findAllByPermission(Permission permission);
+
     Set<RolePermission> findByRoleAndStatus(Role role, Status status);
 
     Optional<RolePermission> findByRoleAndPermission(Role role, Permission permission);
 
     boolean existsByRoleAndPermission(Role role, Permission permission);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update RolePermission rp
                 set rp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     rp.disabledAt = :disabledAt,
                     rp.deletedAt = null
-                where rp.role.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where rp.role.id = :roleId
             """)
-    int cascadedMarkRolePermissionsAsDisabledByRole(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkRolePermissionsAsDisabledByRole(@Param("roleId") UUID roleId, @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update RolePermission rp
                 set rp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED,
                     rp.disabledAt = :disabledAt,
                     rp.deletedAt = null
-                where rp.permission.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DISABLED
+                where rp.permission.id = :permissionId
             """)
-    int cascadedMarkRolePermissionsAsDisabledByPermission(@Param("disabledAt") Instant disabledAt);
+    int cascadedMarkRolePermissionsAsDisabledByPermission(@Param("permissionId") UUID permissionId, @Param("disabledAt") Instant disabledAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 update RolePermission rp
                 set rp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED,
@@ -59,7 +61,7 @@ public interface RolePermissionRepository extends JpaRepository<RolePermission, 
             """)
     int markDisabledRolePermissionsAsDeleted(@Param("cutoff") Instant cutoff, @Param("deletedAt") Instant deletedAt);
 
-    @Modifying
+    @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""
                 delete from RolePermission rp
                 where rp.status = com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status.DELETED

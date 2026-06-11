@@ -59,6 +59,7 @@ public class SubjectRoleService {
 
         assignment.setSubject(subject);
         assignment.setRole(role);
+        assignment.setName(subject.getName() + "->" + role.getName());
         assignment.setStatus(Status.ACTIVE);
 
         return subjectRoleRepository.save(assignment);
