@@ -18,6 +18,8 @@ import com.arya.rbac_policy_manager.rbac_engine.resource.entity.Resource;
 public interface PermissionRepository extends JpaRepository<Permission, UUID> {
     Optional<Permission> findByResourceAndAction(Resource resource, Action action);
 
+    Optional<Permission> findByActionIdAndResourceId(UUID actionId, UUID resourceId);
+
     boolean existsByResourceAndAction(Resource resource, Action action);
 
     List<Permission> findByActionAndStatus(Action action, Status status);

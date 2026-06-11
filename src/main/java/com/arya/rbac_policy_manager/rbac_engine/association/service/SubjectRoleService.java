@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -37,6 +38,16 @@ public class SubjectRoleService {
         }
 
         return assignment;
+    }
+
+    public List<Role> getActiveRoles(UUID subjectId) {
+        List<SubjectRole> assignments = subjectRoleRepository.findBySubjectId(subjectId);
+
+        List<Role> roles = assignments.stream()
+                .map(SubjectRole::getRole)
+                .toList();
+
+        return roles;
     }
 
     public SubjectRole assignSubjectToRole(
@@ -93,5 +104,7 @@ public class SubjectRoleService {
         subjectRoleRepository.save(assignment);
     }
 
-    // Manual deletion of a SubjectRole assignment is not allowed. It must be disabled first, then a scheduled job will permanently delete it after a retention period.
+    // Manual deletion of a SubjectRole assignment is not allowed. It must be
+    // disabled first, then a scheduled job will permanently delete it after a
+    // retention period.
 }

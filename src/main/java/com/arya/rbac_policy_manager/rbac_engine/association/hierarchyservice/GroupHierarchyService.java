@@ -16,7 +16,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +50,7 @@ public class GroupHierarchyService {
 
                 edge.setParentGroup(parent);
                 edge.setChildGroup(child);
-                edge.setName(child.getName() + "->" +parent.getName());
+                edge.setName(child.getName() + "->" + parent.getName());
                 edge.setStatus(Status.ACTIVE);
                 edge.setDeletedAt(null);
                 edge.setDisabledAt(null);
@@ -89,8 +91,9 @@ public class GroupHierarchyService {
 
         }
 
-// Manual deletion of a RolePermission assignment is not allowed. It must be disabled first, then a scheduled job will permanently delete it after a retention period.
-
+        // Manual deletion of a RolePermission assignment is not allowed. It must be
+        // disabled first, then a scheduled job will permanently delete it after a
+        // retention period.
 
         private Group getActiveGroup(UUID groupId) {
 
@@ -112,5 +115,13 @@ public class GroupHierarchyService {
                 return groupHierarchyRepository.findByParentGroupAndChildGroupAndStatus(parent, child, Status.ACTIVE)
                                 .orElseThrow(() -> new ActiveEntityNotFoundException(
                                                 "Active Group Hierarchy not found"));
+        }
+
+        public Set<Group> getActiveChildren(Group group) {
+                return groupHierarchyRepository
+                                .findByParentGroupAndStatus(group, Status.ACTIVE)
+                                .stream()
+                                .map(GroupHierarchy::getChildGroup)
+                                .collect(Collectors.toSet());
         }
 }

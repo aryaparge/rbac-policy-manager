@@ -19,7 +19,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -113,5 +115,13 @@ public class RoleHierarchyService {
                 return roleHierarchyRepository.findByParentRoleAndChildRoleAndStatus(parent, child, Status.ACTIVE)
                                 .orElseThrow(() -> new ActiveEntityNotFoundException(
                                                 "Active Role Hierarchy not found"));
+        }
+
+        public Set<Role> getActiveChildren(Role role) {
+            return roleHierarchyRepository
+            .findByParentRoleAndStatus(role, Status.ACTIVE)
+            .stream()
+            .map(RoleHierarchy::getChildRole)
+            .collect(Collectors.toSet());
         }
 }

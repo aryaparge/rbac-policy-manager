@@ -2,7 +2,9 @@ package com.arya.rbac_policy_manager.rbac_engine.association.service;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -92,6 +94,14 @@ public class RolePermissionService {
         assignment.setDeletedAt(null); // Clear deletedAt in case it was previously marked deleted.
 
         rolePermissionRepository.save(assignment);
+    }
+
+    public Set<Permission> getActivePermissions(Role role) {
+       return rolePermissionRepository
+            .findByRoleAndStatus(role, Status.ACTIVE)
+            .stream()
+            .map(RolePermission::getPermission)
+            .collect(Collectors.toSet());
     }
     //Manual deletion of a RolePermission assignment is not allowed. It must be disabled first, then a scheduled job will permanently delete it after a retention period.
 }

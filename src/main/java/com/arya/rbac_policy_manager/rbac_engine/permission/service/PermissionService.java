@@ -41,7 +41,16 @@ public class PermissionService {
         return permission;
     }
 
-    public Permission createPermission(
+
+
+        public Permission getActivePermission(
+            UUID actionId,
+        UUID resoruceId) {
+        Permission permission = permissionRepository.findByActionIdAndResourceId(actionId, resoruceId)
+                .orElseThrow(() -> new ActiveEntityNotFoundException("Permission for action", actionId));
+
+        return permission;
+    }public Permission createPermission(
             UUID actionId,
             UUID resourceId,
             String description) {

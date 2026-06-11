@@ -2,7 +2,9 @@ package com.arya.rbac_policy_manager.rbac_engine.association.service;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -98,4 +100,12 @@ public class GroupPermissionService {
     // Manual deletion of a GroupPermission assignment is not allowed. It must be
     // disabled first, then a scheduled job will permanently delete it after a
     // retention period.
+
+        public Set<Permission> getActivePermissions(Group group) {
+       return groupPermissionRepository
+            .findByGroupAndStatus(group, Status.ACTIVE)
+            .stream()
+            .map(GroupPermission::getPermission)
+            .collect(Collectors.toSet());
+    }
 }

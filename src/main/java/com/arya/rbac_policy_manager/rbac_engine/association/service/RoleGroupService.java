@@ -2,7 +2,9 @@ package com.arya.rbac_policy_manager.rbac_engine.association.service;
 
 import java.time.Instant;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import org.springframework.stereotype.Service;
 
@@ -46,8 +48,7 @@ public class RoleGroupService {
         Role role = roleService.getRole(roleId);
         Group group = groupService.getGroup(groupId);
 
-        Optional<RoleGroup> existing =
-                roleGroupRepository.findByRoleAndGroup(role, group);
+        Optional<RoleGroup> existing = roleGroupRepository.findByRoleAndGroup(role, group);
 
         if (existing.isPresent()) {
             throw new DuplicateEntityException(
@@ -98,5 +99,15 @@ public class RoleGroupService {
 
         roleGroupRepository.save(assignment);
     }
-    //Manual deletion of a RoleGroup assignment is not allowed. It must be disabled first, then a scheduled job will permanently delete it after a retention period.
+
+    // Manual deletion of a RoleGroup assignment is not allowed. It must be disabled
+    // first, then a scheduled job will permanently delete it after a retention
+    // period.
+    public Set<Group> getActiveGroups(Role role) {
+        return roleGroupRepository
+                .findByRoleAndStatus(role, Status.ACTIVE)
+                .stream()
+                .map(RoleGroup::getGroup)
+                .collect(Collectors.toSet());
+    }
 }
