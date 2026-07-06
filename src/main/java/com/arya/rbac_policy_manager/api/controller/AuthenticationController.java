@@ -1,4 +1,4 @@
-package com.arya.rbac_policy_manager.auth.controller;
+package com.arya.rbac_policy_manager.api.controller;
 
 import com.arya.rbac_policy_manager.auth.dto.LoginRequest;
 import com.arya.rbac_policy_manager.auth.dto.LoginResponse;

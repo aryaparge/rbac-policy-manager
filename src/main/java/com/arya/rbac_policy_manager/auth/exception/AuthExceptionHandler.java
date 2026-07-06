@@ -1,10 +1,12 @@
-package com.arya.rbac_policy_manager.auth.controller;
+package com.arya.rbac_policy_manager.auth.exception;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+
+import com.arya.rbac_policy_manager.api.controller.AuthenticationController;
 
 import java.util.Map;
 
