@@ -61,8 +61,12 @@ public class GroupHierarchyService {
         }
 
         public void enableRelationship(UUID parentGroupId, UUID childGroupId) {
-                GroupHierarchy edge = groupHierarchyRepository.findByParentGroupAndChildGroup(null, null)
-                                .orElseThrow(() -> new EntityNotFoundException("Group Heirarchy not found"));
+                Group parent = groupRepository.getReferenceById(parentGroupId);
+                Group child = groupRepository.getReferenceById(childGroupId);
+
+                GroupHierarchy edge = groupHierarchyRepository
+                                .findByParentGroupAndChildGroup(parent, child)
+                                .orElseThrow(() -> new EntityNotFoundException("Group Hierarchy not found"));
 
                 if (edge.getStatus() != Status.DISABLED) {
                         throw new InvalidEntityStateException(

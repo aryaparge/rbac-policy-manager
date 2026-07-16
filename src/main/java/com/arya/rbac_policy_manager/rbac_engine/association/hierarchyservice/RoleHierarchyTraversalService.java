@@ -3,7 +3,6 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.RoleHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.RoleHierarchyRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
-import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,12 @@ public class RoleHierarchyTraversalService {
     private final RoleHierarchyRepository roleHierarchyRepository;
 
     public boolean isReachable(Role source, Role target) {
+        if (source == null || target == null
+                || source.getStatus() != Status.ACTIVE
+                || target.getStatus() != Status.ACTIVE) {
+            return false;
+        }
+
         Set<UUID> visited = new HashSet<>();
         Deque<Role> stack = new ArrayDeque<>();
 
@@ -41,6 +46,10 @@ public class RoleHierarchyTraversalService {
     }
 
     public Set<Role> getDescendants(Role role) {
+        if (role == null || role.getStatus() != Status.ACTIVE) {
+            return Collections.emptySet();
+        }
+
         Set<Role> descendants = new HashSet<>();
         Deque<Role> stack = new ArrayDeque<>();
 
@@ -61,8 +70,8 @@ public class RoleHierarchyTraversalService {
     }
 
     public Set<Role> getRoleClosure(Role role) {
-        if(role.getStatus() != Status.ACTIVE) {
-            throw new ActiveEntityNotFoundException("Role", role.getName());
+        if (role == null || role.getStatus() != Status.ACTIVE) {
+            return Collections.emptySet();
         }
         Set<Role> closure = new HashSet<>();
         Deque<Role> stack = new ArrayDeque<>();

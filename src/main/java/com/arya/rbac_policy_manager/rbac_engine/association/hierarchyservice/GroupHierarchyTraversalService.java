@@ -3,7 +3,6 @@ package com.arya.rbac_policy_manager.rbac_engine.association.hierarchyservice;
 import com.arya.rbac_policy_manager.rbac_engine.association.entity.GroupHierarchy;
 import com.arya.rbac_policy_manager.rbac_engine.association.repo.GroupHierarchyRepository;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
-import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 
 import lombok.RequiredArgsConstructor;
@@ -17,6 +16,12 @@ public class GroupHierarchyTraversalService {
     private final GroupHierarchyRepository groupHierarchyRepository;
 
     public boolean isReachable(Group source, Group target) {
+        if (source == null || target == null
+                || source.getStatus() != Status.ACTIVE
+                || target.getStatus() != Status.ACTIVE) {
+            return false;
+        }
+
         Set<UUID> visited = new HashSet<>();
         Deque<Group> stack = new ArrayDeque<>();
 
@@ -41,6 +46,10 @@ public class GroupHierarchyTraversalService {
     }
 
     public Set<Group> getDescendants(Group group) {
+        if (group == null || group.getStatus() != Status.ACTIVE) {
+            return Collections.emptySet();
+        }
+
         Set<Group> descendants = new HashSet<>();
         Deque<Group> stack = new ArrayDeque<>();
 
@@ -61,9 +70,8 @@ public class GroupHierarchyTraversalService {
     }
 
     public Set<Group> getGroupClosure(Group group) {
-        if(group.getStatus() != Status.ACTIVE)
-        {
-            throw new ActiveEntityNotFoundException("Group", group.getName());
+        if (group == null || group.getStatus() != Status.ACTIVE) {
+            return Collections.emptySet();
         }
         Set<Group> closure = new HashSet<>();
         Deque<Group> stack = new ArrayDeque<>();

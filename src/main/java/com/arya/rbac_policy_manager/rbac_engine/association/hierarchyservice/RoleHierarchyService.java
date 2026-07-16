@@ -52,7 +52,7 @@ public class RoleHierarchyService {
 
                 edge.setParentRole(parent);
                 edge.setChildRole(child);
-                edge.setName(child.getName() + "->" +parent.getName());
+                edge.setName(child.getName() + "->" + parent.getName());
                 edge.setStatus(Status.ACTIVE);
 
                 roleHierarchyRepository.save(edge);
@@ -61,8 +61,12 @@ public class RoleHierarchyService {
         }
 
         public void enableRelationship(UUID parentRoleId, UUID childRoleId) {
-                RoleHierarchy edge = roleHierarchyRepository.findByParentRoleAndChildRole(null, null)
-                                .orElseThrow(() -> new EntityNotFoundException("Role Heirarchy not found"));
+                Role parent = roleRepository.getReferenceById(parentRoleId);
+                Role child = roleRepository.getReferenceById(childRoleId);
+
+                RoleHierarchy edge = roleHierarchyRepository
+                                .findByParentRoleAndChildRole(parent, child)
+                                .orElseThrow(() -> new EntityNotFoundException("Role Hierarchy not found"));
 
                 if (edge.getStatus() != Status.DISABLED) {
                         throw new InvalidEntityStateException(
@@ -118,10 +122,10 @@ public class RoleHierarchyService {
         }
 
         public Set<Role> getActiveChildren(Role role) {
-            return roleHierarchyRepository
-            .findByParentRoleAndStatus(role, Status.ACTIVE)
-            .stream()
-            .map(RoleHierarchy::getChildRole)
-            .collect(Collectors.toSet());
+                return roleHierarchyRepository
+                                .findByParentRoleAndStatus(role, Status.ACTIVE)
+                                .stream()
+                                .map(RoleHierarchy::getChildRole)
+                                .collect(Collectors.toSet());
         }
 }
