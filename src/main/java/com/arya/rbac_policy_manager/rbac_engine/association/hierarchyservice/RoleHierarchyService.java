@@ -7,7 +7,6 @@ import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
-import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
 
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
@@ -65,13 +64,8 @@ public class RoleHierarchyService {
                 Role child = roleRepository.getReferenceById(childRoleId);
 
                 RoleHierarchy edge = roleHierarchyRepository
-                                .findByParentRoleAndChildRole(parent, child)
+                                .findByParentRoleAndChildRoleAndStatus(parent, child, Status.DISABLED)
                                 .orElseThrow(() -> new EntityNotFoundException("Role Hierarchy not found"));
-
-                if (edge.getStatus() != Status.DISABLED) {
-                        throw new InvalidEntityStateException(
-                                        "Only disabled edges can be enabled.");
-                }
 
                 validationService.validateNoCycle(edge.getParentRole(), edge.getChildRole());
                 validationService.validateDepthLimit(edge.getParentRole(), edge.getChildRole());

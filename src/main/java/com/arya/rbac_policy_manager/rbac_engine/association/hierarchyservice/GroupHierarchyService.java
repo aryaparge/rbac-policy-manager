@@ -6,7 +6,6 @@ import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.ActiveEntityNotFoundException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.DuplicateEntityException;
 import com.arya.rbac_policy_manager.rbac_engine.common.exception.EntityNotFoundException;
-import com.arya.rbac_policy_manager.rbac_engine.common.exception.InvalidEntityStateException;
 import com.arya.rbac_policy_manager.rbac_engine.group.entity.Group;
 import com.arya.rbac_policy_manager.rbac_engine.group.repo.GroupRepository;
 
@@ -65,13 +64,8 @@ public class GroupHierarchyService {
                 Group child = groupRepository.getReferenceById(childGroupId);
 
                 GroupHierarchy edge = groupHierarchyRepository
-                                .findByParentGroupAndChildGroup(parent, child)
+                                .findByParentGroupAndChildGroupAndStatus(parent, child, Status.DISABLED)
                                 .orElseThrow(() -> new EntityNotFoundException("Group Hierarchy not found"));
-
-                if (edge.getStatus() != Status.DISABLED) {
-                        throw new InvalidEntityStateException(
-                                        "Only disabled edges can be enabled.");
-                }
 
                 validationService.validateNoCycle(edge.getParentGroup(), edge.getChildGroup());
                 validationService.validateDepthLimit(edge.getParentGroup(), edge.getChildGroup());
