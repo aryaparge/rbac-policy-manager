@@ -41,7 +41,7 @@ public class SubjectRoleService {
     }
 
     public List<Role> getActiveRoles(UUID subjectId) {
-        List<SubjectRole> assignments = subjectRoleRepository.findBySubjectId(subjectId);
+        List<SubjectRole> assignments = subjectRoleRepository.findBySubjectIdAndStatus(subjectId, Status.ACTIVE);
 
         List<Role> roles = assignments.stream()
                 .map(SubjectRole::getRole)

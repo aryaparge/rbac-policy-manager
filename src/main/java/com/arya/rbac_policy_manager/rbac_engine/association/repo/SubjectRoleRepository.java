@@ -23,6 +23,8 @@ public interface SubjectRoleRepository extends JpaRepository<SubjectRole, UUID> 
 
     List<SubjectRole> findBySubjectId(UUID subjectId);
 
+    List<SubjectRole> findBySubjectIdAndStatus(UUID subjectId, Status status);
+
     List<SubjectRole> findBySubjectAndStatus(Subject subject, Status status);
 
     Optional<SubjectRole> findBySubjectAndRole(Subject subject, Role role);
