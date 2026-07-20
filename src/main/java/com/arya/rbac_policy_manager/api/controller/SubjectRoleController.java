@@ -1,5 +1,6 @@
 package com.arya.rbac_policy_manager.api.controller;
 
+import com.arya.rbac_policy_manager.rbac_engine.association.entity.SubjectRole;
 import com.arya.rbac_policy_manager.rbac_engine.association.service.SubjectRoleService;
 import com.arya.rbac_policy_manager.rbac_engine.common.Enums.Status;
 import com.arya.rbac_policy_manager.rbac_engine.role.entity.Role;
@@ -7,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.UUID;
@@ -20,11 +22,12 @@ public class SubjectRoleController {
     private final SubjectRoleService subjectRoleService;
 
     @PostMapping("/{roleId}")
-    public ResponseEntity<Void> assignRoleToSubject(
+    public ResponseEntity<SubjectRoleResponse> assignRoleToSubject(
             @PathVariable("subjectId") UUID subjectId,
             @PathVariable("roleId") UUID roleId) {
-        subjectRoleService.assignSubjectToRole(subjectId, roleId);
-        return ResponseEntity.noContent().build();
+        SubjectRole assignment = subjectRoleService.assignSubjectToRole(subjectId, roleId);
+        return ResponseEntity.created(URI.create("/api/subject-roles/" + assignment.getId()))
+                .body(toAssignmentResponse(assignment));
     }
 
     @DeleteMapping("/{roleId}")
@@ -59,6 +62,21 @@ public class SubjectRoleController {
                 role.getDeletedAt());
     }
 
+    private static SubjectRoleResponse toAssignmentResponse(SubjectRole assignment) {
+        return new SubjectRoleResponse(
+                assignment.getId(),
+                assignment.getName(),
+                assignment.getStatus(),
+                assignment.getCreatedAt(),
+                assignment.getCreatedBy(),
+                assignment.getUpdatedAt(),
+                assignment.getUpdatedBy(),
+                assignment.getDisabledAt(),
+                assignment.getDeletedAt(),
+                assignment.getSubject().getId(),
+                assignment.getRole().getId());
+    }
+
     public static record RoleResponse(
             UUID id,
             String name,
@@ -70,5 +88,19 @@ public class SubjectRoleController {
             String updatedBy,
             Instant disabledAt,
             Instant deletedAt) {
+    }
+
+    public static record SubjectRoleResponse(
+            UUID id,
+            String name,
+            Status status,
+            Instant createdAt,
+            String createdBy,
+            Instant updatedAt,
+            String updatedBy,
+            Instant disabledAt,
+            Instant deletedAt,
+            UUID subjectId,
+            UUID roleId) {
     }
 }

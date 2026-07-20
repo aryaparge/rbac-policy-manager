@@ -31,8 +31,11 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             @NonNull HttpServletRequest request,
             @NonNull HttpServletResponse response,
             @NonNull FilterChain filterChain) throws ServletException, IOException {
+        
+        System.out.println("JWT Filter: " + request.getRequestURI());
 
         // Already authenticated for this request? Don't redo the work.
+        
         if (SecurityContextHolder.getContext().getAuthentication() != null) {
             filterChain.doFilter(request, response);
             return;
