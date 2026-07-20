@@ -1,0 +1,60 @@
+services:
+
+  postgres:
+    image: postgres:17
+    container_name: rbac-postgres
+
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+
+    volumes:
+      - rbac-postgres-data:/var/lib/postgresql/data
+
+    ports:
+      - "5432:5432"
+
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    image: rbac-policy-manager-backend:1.0
+
+    container_name: rbac-backend
+
+    depends_on:
+      - postgres
+
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+
+      JWT_SECRET: ${JWT_SECRET}
+
+    ports:
+      - "8080:8080"
+
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+
+    image: rbac-policy-manager-frontend:1.0
+
+    container_name: rbac-frontend
+
+    depends_on:
+      - backend
+
+    ports:
+      - "3000:80"
+
+
+volumes:
+
+  rbac-postgres-data:
