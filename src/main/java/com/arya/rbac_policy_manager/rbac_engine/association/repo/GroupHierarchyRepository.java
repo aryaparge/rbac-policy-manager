@@ -22,6 +22,8 @@ public interface GroupHierarchyRepository extends JpaRepository<GroupHierarchy, 
 
         List<GroupHierarchy> findByParentGroupAndStatus(Group parentGroup, Status status);
 
+        List<GroupHierarchy> findByParentGroup(Group parentGroup);
+
         List<GroupHierarchy> findByChildGroupAndStatus(Group childGroup, Status status);
 
         Optional<GroupHierarchy> findByParentGroupAndChildGroup(Group parentGroup, Group childGroup);

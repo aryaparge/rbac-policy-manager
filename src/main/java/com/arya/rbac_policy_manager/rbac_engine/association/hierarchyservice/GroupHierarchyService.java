@@ -14,6 +14,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -87,6 +88,13 @@ public class GroupHierarchyService {
 
                 groupHierarchyRepository.save(edge);
 
+        }
+
+        @Transactional(readOnly = true)
+        public List<GroupHierarchy> getRelationshipsForParent(UUID parentGroupId) {
+                Group parent = groupRepository.findById(parentGroupId)
+                                .orElseThrow(() -> new EntityNotFoundException("Group not found"));
+                return groupHierarchyRepository.findByParentGroup(parent);
         }
 
         // Manual deletion of a RolePermission assignment is not allowed. It must be

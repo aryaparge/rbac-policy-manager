@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -66,6 +67,10 @@ public class RolePermissionService {
         assignment.setStatus(Status.ACTIVE);
 
         return rolePermissionRepository.save(assignment);
+    }
+
+    public List<RolePermission> getAssignmentsForRole(UUID roleId) {
+        return rolePermissionRepository.findByRole(roleService.getRole(roleId));
     }
 
     public void disableAssignment(UUID assignmentId) {

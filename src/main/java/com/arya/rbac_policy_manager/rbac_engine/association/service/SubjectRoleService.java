@@ -50,6 +50,10 @@ public class SubjectRoleService {
         return roles;
     }
 
+    public List<SubjectRole> getAssignmentsForSubject(UUID subjectId) {
+        return subjectRoleRepository.findBySubject(subjectService.getSubject(subjectId));
+    }
+
     public SubjectRole assignSubjectToRole(
             UUID subjectId,
             UUID roleId) {

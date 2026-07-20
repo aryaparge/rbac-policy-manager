@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -31,6 +33,19 @@ public class RoleGroupController {
         RoleGroup assignment = roleGroupService.assignRoleToGroup(request.roleId(), request.groupId());
         return ResponseEntity.created(URI.create("/api/role-groups/" + assignment.getId()))
                 .body(toResponse(assignment));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<RoleGroupResponse>> getAssignments(
+            @RequestParam(required = false) UUID roleId,
+            @RequestParam(required = false) UUID groupId) {
+        if ((roleId == null) == (groupId == null)) {
+            throw new IllegalArgumentException("Specify exactly one of roleId or groupId");
+        }
+        List<RoleGroup> assignments = roleId != null
+                ? roleGroupService.getAssignmentsForRole(roleId)
+                : roleGroupService.getAssignmentsForGroup(groupId);
+        return ResponseEntity.ok(assignments.stream().map(RoleGroupController::toResponse).toList());
     }
 
     @GetMapping("/{assignmentId}")

@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -65,6 +66,14 @@ public class RoleGroupService {
         assignment.setStatus(Status.ACTIVE);
 
         return roleGroupRepository.save(assignment);
+    }
+
+    public List<RoleGroup> getAssignmentsForRole(UUID roleId) {
+        return roleGroupRepository.findByRole(roleService.getRole(roleId));
+    }
+
+    public List<RoleGroup> getAssignmentsForGroup(UUID groupId) {
+        return roleGroupRepository.findByGroup(groupService.getGroup(groupId));
     }
 
     public void disableAssignment(UUID assignmentId) {

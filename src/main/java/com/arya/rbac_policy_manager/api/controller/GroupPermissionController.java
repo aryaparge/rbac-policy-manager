@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +34,13 @@ public class GroupPermissionController {
         GroupPermission assignment = groupPermissionService.assignPermissionToGroup(request.permissionId(), request.groupId());
         return ResponseEntity.created(URI.create("/api/group-permissions/" + assignment.getId()))
                 .body(toResponse(assignment));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<GroupPermissionResponse>> getAssignmentsForGroup(@RequestParam UUID groupId) {
+        return ResponseEntity.ok(groupPermissionService.getAssignmentsForGroup(groupId).stream()
+                .map(GroupPermissionController::toResponse)
+                .toList());
     }
 
     @GetMapping("/{assignmentId}")

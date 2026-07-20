@@ -1,6 +1,7 @@
 package com.arya.rbac_policy_manager.rbac_engine.association.service;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
@@ -63,6 +64,10 @@ public class GroupPermissionService {
         assignment.setStatus(Status.ACTIVE);
 
         return groupPermissionRepository.save(assignment);
+    }
+
+    public List<GroupPermission> getAssignmentsForGroup(UUID groupId) {
+        return groupPermissionRepository.findByGroup(groupService.getGroup(groupId));
     }
 
     public void disableAssignment(UUID assignmentId) {

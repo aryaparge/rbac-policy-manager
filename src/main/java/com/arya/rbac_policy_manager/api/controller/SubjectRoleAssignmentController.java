@@ -9,9 +9,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -24,6 +26,13 @@ public class SubjectRoleAssignmentController {
     @GetMapping("/{assignmentId}")
     public ResponseEntity<SubjectRoleResponse> getAssignment(@PathVariable UUID assignmentId) {
         return ResponseEntity.ok(toResponse(subjectRoleService.getActiveAssignment(assignmentId)));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<SubjectRoleResponse>> getAssignmentsForSubject(@RequestParam UUID subjectId) {
+        return ResponseEntity.ok(subjectRoleService.getAssignmentsForSubject(subjectId).stream()
+                .map(SubjectRoleAssignmentController::toResponse)
+                .toList());
     }
 
     @PatchMapping("/{assignmentId}/disable")

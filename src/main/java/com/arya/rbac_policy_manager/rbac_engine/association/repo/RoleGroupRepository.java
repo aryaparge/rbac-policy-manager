@@ -21,6 +21,8 @@ public interface RoleGroupRepository extends JpaRepository<RoleGroup, UUID> {
 
     List<RoleGroup> findByRole(Role role);
 
+    List<RoleGroup> findByGroup(Group group);
+
     List<RoleGroup> findByRoleAndStatus(Role role, Status status);
 
     Optional<RoleGroup> findByRoleAndGroup(Role role, Group group);
@@ -45,7 +47,7 @@ public interface RoleGroupRepository extends JpaRepository<RoleGroup, UUID> {
                     rg.deletedAt = null
                 where rg.group.id = :groupId
             """)
-    int cascadedMarkRoleGroupsAsDisabledByGroup(@Param("groupIdId") UUID groupId, @Param("disabledAt") Instant disabledAt);
+    int cascadedMarkRoleGroupsAsDisabledByGroup(@Param("groupId") UUID groupId, @Param("disabledAt") Instant disabledAt);
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query("""

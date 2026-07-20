@@ -13,10 +13,12 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.net.URI;
 import java.time.Instant;
+import java.util.List;
 import java.util.UUID;
 
 @RestController
@@ -32,6 +34,13 @@ public class RolePermissionController {
         RolePermission assignment = rolePermissionService.assignPermissionToRole(request.permissionId(), request.roleId());
         return ResponseEntity.created(URI.create("/api/role-permissions/" + assignment.getId()))
                 .body(toResponse(assignment));
+    }
+
+    @GetMapping
+    public ResponseEntity<List<RolePermissionResponse>> getAssignmentsForRole(@RequestParam UUID roleId) {
+        return ResponseEntity.ok(rolePermissionService.getAssignmentsForRole(roleId).stream()
+                .map(RolePermissionController::toResponse)
+                .toList());
     }
 
     @GetMapping("/{assignmentId}")
